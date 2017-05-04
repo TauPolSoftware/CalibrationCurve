@@ -59,16 +59,16 @@ nsteps=(rends-lends)/steps+1
 for n in range(2):
 
     #Copying files to substitute to ZFitter folder
-    os.system("cp ../ZFitter/FilesToSubstitute/dizet6_42.f ../ZFitter/dizet6_42.f")
+    os.system("cp ../zFitter/FilesToSubstitute/dizet6_42.f ../zFitter/dizet6_42.f")
     if n==0:
-        os.system("cp ../ZFitter/FilesToSubstitute/zfusr6_42d.f ../ZFitter/zfusr6_42.f")
+        os.system("cp ../zFitter/FilesToSubstitute/zfusr6_42d.f ../zFitter/zfusr6_42.f")
     else:
-        os.system("cp ../ZFitter/FilesToSubstitute/zfusr6_42u.f ../ZFitter/zfusr6_42.f")
+        os.system("cp ../zFitter/FilesToSubstitute/zfusr6_42u.f ../zFitter/zfusr6_42.f")
 
     #writing range of energy and steps into file
-    for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+    for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
         print line.rstrip().replace("DO I = 1,560","DO I = 1,%s"%nsteps)
-    for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+    for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
         print line.rstrip().replace("RS = 35.0+0.25*(I-1)","RS = %s+%s*(I-1)"%(lends,steps))
 
 
@@ -80,35 +80,35 @@ for n in range(2):
         #setting names for output
         if n==0:
             if i==0:
-                for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+                for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
                     print line.rstrip().replace("PolarizationAndXsecQuarkD_UNDEFINED","PolarizationAndXsecQuarkD_%s"%sineff[i])
             else: 
-                for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+                for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
                     print line.rstrip().replace("PolarizationAndXsecQuarkD_%s"%sineff[i-1],"PolarizationAndXsecQuarkD_%s"%sineff[i])
 
         else:
             if i==0:
-                for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+                for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
                     print line.rstrip().replace("PolarizationAndXsecQuarkU_UNDEFINED","PolarizationAndXsecQuarkU_%s"%sineff[i])
             else:
-                for line in fileinput.input("../ZFitter/zfusr6_42.f",inplace=True):
+                for line in fileinput.input("../zFitter/zfusr6_42.f",inplace=True):
                     print line.rstrip().replace("PolarizationAndXsecQuarkU_%s"%sineff[i-1],"PolarizationAndXsecQuarkU_%s"%sineff[i])
 
         #setting sin2T value
         if i==0:
-            for line in fileinput.input("../ZFitter/dizet6_42.f",inplace=True):
+            for line in fileinput.input("../zFitter/dizet6_42.f",inplace=True):
                 print line.rstrip().replace("SINEFF=UNDEFINED",sineff[0])
             print "(SINEFF=UNDEFINED to %s)"%sineff[0]
         else:
-            for line in fileinput.input("../ZFitter/dizet6_42.f",inplace=True):
+            for line in fileinput.input("../zFitter/dizet6_42.f",inplace=True):
                 print line.rstrip().replace(sineff[i-1],sineff[i])
             print "(%s to %s)"%(sineff[i-1],sineff[i])
 
         #compile ZFitter
-        os.system("cd ../ZFitter && g77 -g  -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore -fugly-logint -ftypeless-boz  *.f -o zfitr642.exe")
+        os.system("cd ../zFitter && g77 -g  -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore -fugly-logint -ftypeless-boz  *.f -o zfitr642.exe")
 
         #starting ZFitter
-        os.system("../ZFitter/zfitr642.exe")
+        os.system("../zFitter/zfitr642.exe")
 
 
 #Writing data into TFile
