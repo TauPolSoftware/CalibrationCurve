@@ -1,7 +1,19 @@
 import ROOT
 import os
 import math
+import numpy as np
 
+#Function from setkitanalysis which writes an object into a TFile
+def write_object(root_file, root_object, path):
+		root_file.cd()
+		root_directory = root_file
+		for directory in path.split("/")[:-1]:
+			if root_directory.Get(directory) == None:
+				root_directory.mkdir(directory)
+			root_directory = root_directory.Get(directory)
+			root_directory.cd()
+		root_object.Write(path.split("/")[-1], ROOT.TObject.kWriteDelete)
+		root_file.cd()
 
 #Function to calculate the error of a product
 def producterr2(x,xerr,y,yerr):
@@ -17,8 +29,19 @@ def ratioerr(x,xerr,y,yerr):
 
 
 #Open ROOT file and extracting the example count histogram
-Histfile=ROOT.TFile("../data/genBosonLV_M__.root")
+Histfile=ROOT.TFile("genBosonLV_M__.root")
 Nhist=Histfile.Get("ztt")
+
+poltree=ROOT.TTree()
+poltree.SetName("calibrationcurve")
+poltest=np.zeros(1,dtype=float)
+poltreelvl=np.zeros(1,dtype=float)
+poltesterr=np.zeros(1,dtype=float)
+sin2ttest=np.zeros(1,dtype=float)
+poltree.Branch("poltest",poltest,"Polarisation/D")
+poltree.Branch("poltreelvl",poltreelvl,"Polarisationtree/D")
+poltree.Branch("poltesterr",poltesterr,"Polarisationerr/D")
+poltree.Branch("sin2ttest",sin2ttest,"sin2T/D")
 
 
 #Extracting bin information from the count histogram
@@ -30,7 +53,7 @@ StepN=(HighEdgeN-LowEdgeN)/NbinN
 
 lendsin2T=0.200
 rendsin2T=0.250
-stepsin2T=0.005
+stepsin2T=0.0025
 nstepsin2T=(rendsin2T-lendsin2T)/stepsin2T
 sineff=[]
 for i in range(int(nstepsin2T+2)):
@@ -120,7 +143,12 @@ for l in range(len(sineff)):
     finalval.SetPoint(l,lendsin2T+l*stepsin2T,averagepol)
     finalerr.SetPoint(l,lendsin2T+l*stepsin2T,averagepolerr)
     workinggraph.SetPoint(l,averagepol,lendsin2T+l*stepsin2T)
-
+    
+    poltest[0]=averagepol
+    sin2ttest[0]=lendsin2T+l*stepsin2T
+    poltesterr[0]=averagepolerr
+    poltreelvl[0]=(-2+8*(lendsin2T+l*stepsin2T))
+    poltree.Fill()
 
     if lendsin2T+l*stepsin2T==0.23:
         polGraph.SetTitle("Polarization of #tau's at sin^{2}(#theta_{W})=0.23")
@@ -187,3 +215,7 @@ myCanvas.SaveAs("CalibrationGraph.pdf")
 #os.system("gnome-open testhist.pdf")
 os.system("gnome-open CalibrationGraph.pdf")
 #Histfile.Close()
+
+Datafile=ROOT.TFile("data.root","UPDATE")
+write_object(Datafile,poltree,"calibrationvalues")
+Datafile.Close()
