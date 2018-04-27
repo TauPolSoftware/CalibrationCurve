@@ -11,12 +11,12 @@ import TauPolSoftware.CalibrationCurve.tools as tools
 
 #Function which calculates the error for an expression of two variables
 def calcerror(a,ae,b,be,string):
-    if string == "sum":
-        return math.sqrt(pow(ae,2)+pow(be,2))
-    if string == "product":
-        return math.sqrt(pow(b*ae,2)+pow(a*be,2))
-    if string == "ratio":
-        return math.sqrt(pow(ae/b,2)+pow(a*be/pow(b,2),2))
+	if string == "sum":
+		return math.sqrt(pow(ae,2)+pow(be,2))
+	if string == "product":
+		return math.sqrt(pow(b*ae,2)+pow(a*be,2))
+	if string == "ratio":
+		return math.sqrt(pow(ae/b,2)+pow(a*be/pow(b,2),2))
 
 """ Implemented in writequarkfractionstodata.py
 #Storing fraction values of quarks for energies in data.root
@@ -38,7 +38,7 @@ sineff=[]
 
 #Create an array of strings containing the values of sin2T
 for i in range(int(nstepsin2T+2)):
-    sineff.append("SINEFF=%s"%(lendsin2T+i*stepsin2T))
+	sineff.append("SINEFF=%s"%(lendsin2T+i*stepsin2T))
 
 
 ##Combine the data of up-type and down-type quarks from ZFitter and using the NLOPDF and calculate their errors
