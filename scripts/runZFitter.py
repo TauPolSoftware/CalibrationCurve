@@ -1,19 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import ROOT
 import os
 import fileinput
-#import Artus.HarryPlotter.utilty.roottools as rt
 
-#Function for filling TFiles (from setkitanalysis)
-def write_object(root_file, root_object, path):
-		root_file.cd()
-		root_directory = root_file
-		for directory in path.split("/")[:-1]:
-			if root_directory.Get(directory) == None:
-				root_directory.mkdir(directory)
-			root_directory = root_directory.Get(directory)
-			root_directory.cd()
-		root_object.Write(path.split("/")[-1], ROOT.TObject.kWriteDelete)
-		root_file.cd()
+import TauPolSoftware.CalibrationCurve.tools as tools
+
 
 """
 #open ROOT File and extracting the histogram
@@ -120,12 +113,12 @@ for n in range(2):
         if n==0:
             tree.ReadFile("PolarizationAndXsecQuarkD_%s.dat"%sineff[i],"s:xsec:pol")
             tree.SetName("Down %s"%sineff[i])
-            write_object(Datfile,tree,"Down/Down%s"%sineff[i].replace("=",""))
+            tools.write_object(Datfile,tree,"Down/Down%s"%sineff[i].replace("=",""))
             Datfile.Write()
         else:
             tree.ReadFile("PolarizationAndXsecQuarkU_%s.dat"%sineff[i],"s:xsec:pol")
             tree.SetName("Up %s"%sineff[i])
-            write_object(Datfile,tree,"Up/Up%s"%sineff[i].replace("=",""))
+            tools.write_object(Datfile,tree,"Up/Up%s"%sineff[i].replace("=",""))
             Datfile.Write()
 Datfile.Close()
 
