@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import ROOT
+
+
 def write_object(root_file, root_object, path):
 	root_file.cd()
 	root_directory = root_file
