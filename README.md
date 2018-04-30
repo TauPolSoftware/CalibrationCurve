@@ -1,4 +1,10 @@
-# PolarisationCalibrationCurve
+# Checkout
+
+```bash
+git clone --recursive https://github.com/TauPolSoftware/CalibrationCurve.git TauPolSoftware/CalibrationCurve
+```
+
+# Running
 
 Zfitter program is used to calculate the tau polarisation and cross section for a given energy and an effective sin2theta values 
 by taking into account a different coupling of the up-type and down-type quarks.
