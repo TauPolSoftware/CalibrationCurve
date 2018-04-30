@@ -25,7 +25,7 @@ if __name__ == "__main__":
 	#Storing fraction values of quarks for energies in data.root
 	output_file = ROOT.TFile(args.output, "RECREATE")
 	tree = ROOT.TTree()
-	tree.ReadFile(args.input, "energy:down:errd:up:erru:strange:errs:charm:errc:bottom:errb")
+	tree.ReadFile(args.input, "energy:down:downerr:up:uperr:strange:strangeerr:charm:charmerr:bottom:bottomerr")
 	tree.SetName("Fractions")
 	tools.write_object(output_file, tree, "Fractions/Fractions")
 	output_file.Write()

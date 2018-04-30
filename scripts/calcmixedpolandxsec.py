@@ -27,7 +27,7 @@ if __name__ == "__main__":
 	
 	parser.add_argument("--input-zfitter", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/zfitter.root",
 	                    help="Input *.root file from ZFitter containing up/down-type polarisations. [Default: %(default)s]")
-	parser.add_argument("--input-pdf", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/zfitter.root",
+	parser.add_argument("--input-pdf", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/pfractions.root",
 	                    help="Input *.root file from PDFs containing quark fractions. [Default: %(default)s]")
 	
 	parser.add_argument("--sin2theta-min", type=float, default=0.200,
@@ -58,8 +58,8 @@ if __name__ == "__main__":
 	for sin2theta_value in sin2theta_values:
 	
 		#Read in the relevant data from input
-		down_values_tree = input_file_zfitter.Get("Down/Down%s"%sin2theta_value.replace("=",""))
-		up_values_tree = input_file_zfitter.Get("Up/Up%s"%sin2theta_value.replace("=",""))
+		down_values_tree = input_file_zfitter.Get("Down/Down{value}".format(value=sin2theta_value.replace("=","")))
+		up_values_tree = input_file_zfitter.Get("Up/Up{value}".format(value=sin2theta_value.replace("=","")))
 
 		#Create a new Tree
 		output_file.cd()
@@ -90,12 +90,12 @@ if __name__ == "__main__":
 			quark_fractions_tree.GetEntry(entry)
 		
 			#Copy energy
-			energy[0] = down_values_tree.s
+			energy[0] = down_values_tree.energy
 
 			#Calculate ratios and corresponding errors of up-type and down-type quarks
 			rU = (quark_fractions_tree.up+quark_fractions_tree.charm)/(quark_fractions_tree.up+quark_fractions_tree.charm+quark_fractions_tree.down+quark_fractions_tree.bottom+quark_fractions_tree.strange)
 			rD = 1-rU
-			rerr = calcerror(quark_fractions_tree.up+quark_fractions_tree.charm,math.sqrt(pow(quark_fractions_tree.erru,2)+pow(quark_fractions_tree.errc,2)),quark_fractions_tree.up+quark_fractions_tree.charm+quark_fractions_tree.down+quark_fractions_tree.bottom+quark_fractions_tree.strange,math.sqrt(pow(quark_fractions_tree.erru,2)+pow(quark_fractions_tree.errc,2)+pow(quark_fractions_tree.errd,2)+pow(quark_fractions_tree.errb,2)+pow(quark_fractions_tree.errs,2)),"ratio")
+			rerr = calcerror(quark_fractions_tree.up+quark_fractions_tree.charm,math.sqrt(pow(quark_fractions_tree.uperr,2)+pow(quark_fractions_tree.charmerr,2)),quark_fractions_tree.up+quark_fractions_tree.charm+quark_fractions_tree.down+quark_fractions_tree.bottom+quark_fractions_tree.strange,math.sqrt(pow(quark_fractions_tree.uperr,2)+pow(quark_fractions_tree.charmerr,2)+pow(quark_fractions_tree.downerr,2)+pow(quark_fractions_tree.bottomerr,2)+pow(quark_fractions_tree.strangeerr,2)),"ratio")
 		
 			#Calculate combined polarisation and corresponding errors
 			denom = rU*up_values_tree.xsec+rD*down_values_tree.xsec
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 			#Calculate combined cross-section and corresponding errors
 			xsec[0] = up_values_tree.xsec*(quark_fractions_tree.up+quark_fractions_tree.charm)+down_values_tree.xsec*(quark_fractions_tree.down+quark_fractions_tree.strange+quark_fractions_tree.bottom)
-			xsecerr[0] = math.sqrt(pow(up_values_tree.xsec,2)*(pow(quark_fractions_tree.erru,2)+pow(quark_fractions_tree.errc,2))+pow(down_values_tree.xsec,2)*(pow(quark_fractions_tree.errd,2)+pow(quark_fractions_tree.errs,2)+pow(quark_fractions_tree.errb,2)))
+			xsecerr[0] = math.sqrt(pow(up_values_tree.xsec,2)*(pow(quark_fractions_tree.erru,2)+pow(quark_fractions_tree.charmerr,2))+pow(down_values_tree.xsec,2)*(pow(quark_fractions_tree.downerr,2)+pow(quark_fractions_tree.strangeerr,2)+pow(quark_fractions_tree.bottomerr,2)))
 		
 			#Fill the calculated data into the tree
 			output_tree.Fill()
@@ -119,4 +119,5 @@ if __name__ == "__main__":
 	output_file.Close()
 	input_file_zfitter.Close()
 	input_file_pdf.Close()
+	print "Saved outputs in\n\t{output_file}".format(output_file=args.output)
 
