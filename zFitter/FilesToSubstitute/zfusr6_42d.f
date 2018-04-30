@@ -953,18 +953,18 @@ C      PARAMETER(QE=2.D0/3.D0,AE=.5D0,QU= 2.D0/3.D0,AU= .5D0,
 * DO loop over S
 *     
 * define the output
-      OPEN(UNIT = 55,FILE="PolarizationAndXsecQuarkD_UNDEFINED.dat")
+      OPEN(UNIT = 55,FILE="PolarizationAndXsecQuarkD_$replacement_sin2theta_label.dat")
 C      WRITE(55,'(2x,A,A,A)') '<---RS-->', '<--xsec-->', '<--taupol-->'
       Zr1=0
       Zr2=0
-      WRITE(55,'(1x,A,6F10.5)') SIN2TW Zr1 Zr2
+C      WRITE(55,'(1x,A,6F10.5)') SIN2TW Zr1 Zr2
 C      S2TEFF(3)=0.15
-      DO I = 1,560
+      DO I = 1,$replacement_n_energy_values
 C      DO I = 1,14
 * 
 * array of RS=SQRT(S)
 *
-         RS = 35.0+0.25*(I-1)
+         RS = $replacement_energy_min+$replacement_energy_delta*(I-1)
 C         RS = 91.18760
 C        IF(I.EQ.1) RS=35.0
 C        IF(I.EQ.2) RS=40D0

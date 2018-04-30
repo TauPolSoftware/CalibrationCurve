@@ -4,7 +4,7 @@
 import argparse
 import fileinput
 import numpy
-import shutil
+import string
 import os
 
 import ROOT
@@ -37,74 +37,64 @@ if __name__ == "__main__":
 	args.output = os.path.expandvars(args.output)
 	
 	# create an array for sin^2 theta_W values
-	sin2theta_values = ["SINEFF={value}".format(value=value) for value in numpy.arange(args.sin2theta_min, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta)]
+	sin2theta_values = list(numpy.arange(args.sin2theta_min, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta))
+	sin2theta_labels = ["{value:04}".format(value=int(value*1000)) for value in sin2theta_values]
 	
 	# create an array for sqrt(s) values
 	energy_steps = (args.energy_max-args.energy_min)/args.energy_delta+1
 	energy_values = list(numpy.arange(args.energy_min, args.energy_max+args.energy_delta, args.energy_delta))
 
+	# load templates for replacements in fortran code
+	dizet_template = None
+	with open(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/FilesToSubstitute/dizet6_42.f")) as dizet_file:
+		dizet_template = string.Template(dizet_file.read())
+	
+	output_file = ROOT.TFile(args.output, "RECREATE")
+	
 	# starting the process for U and D quarks
 	for quark in ["D", "U"]:
-
-		# Copying files to substitute to ZFitter folder
-		shutil.copyfile(
-				os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/FilesToSubstitute/dizet6_42.f"),
-				os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f")
-		)
-		shutil.copyfile(
-				os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/FilesToSubstitute/zfusr6_42{quark}.f").format(quark=quark.lower()),
-				os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f")
-		)
-
-		# writing range of energy and steps into file
-		for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f"), inplace=True):
-			print line.rstrip().replace("DO I = 1,560", "DO I = 1,{energy_steps}".format(energy_steps=energy_steps))
-		for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f"), inplace=True):
-			print line.rstrip().replace("RS = 35.0+0.25*(I-1)", "RS = {energy_min}+{energy_delta}*(I-1)".format(energy_min=args.energy_min, energy_delta=args.energy_delta))
+	
+		# load templates for replacements in fortran code
+		zfusr_template = None
+		with open(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/FilesToSubstitute/zfusr6_42{quark}.f").format(quark=quark.lower())) as zfusr_file:
+			zfusr_template = string.Template(zfusr_file.read())
 
 		# looping over all requested values for sin^2 theta_W
-		for sin2theta_low, sin2theta_high in [(None, sin2theta_values[0])]+zip(sin2theta_values[:-1], sin2theta_values[1:]):
-			print "{value} run: compiling ZFitter, running ZFitter".format(value=sin2theta_high)
-		
-			# setting names for output
-			if sin2theta_low is None:
-				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f"), inplace=True):
-					print line.rstrip().replace("PolarizationAndXsecQuark{quark}_UNDEFINED".format(quark=quark), "PolarizationAndXsecQuark{quark}_{value}".format(quark=quark, value=sin2theta_high))
-			else:
-				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f"), inplace=True):
-					print line.rstrip().replace("PolarizationAndXsecQuark{quark}_{value}".format(quark=quark, value=sin2theta_low), "PolarizationAndXsecQuark{quark}_{value}".format(quark=quark, value=sin2theta_high))
-
-			# setting sin^2 theta_W value
-			if sin2theta_low is None:
-				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f"), inplace=True):
-					print line.rstrip().replace("SINEFF=0.200", sin2theta_values[0])
-				print "(SINEFF=UNDEFINED to {value})".format(value=sin2theta_values[0])
-			else:
-				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f"), inplace=True):
-					print line.rstrip().replace(sin2theta_low, sin2theta_high)
-				print "({value_low} to {value_high})".format(value_low=sin2theta_low, value_high=sin2theta_high)
-
+		for sin2theta_value, sin2theta_label in zip(sin2theta_values, sin2theta_labels):
+			print "sin^2 theta_W={value} run: compiling ZFitter, running ZFitter".format(value=sin2theta_value)
+			
+			# replacements in fortran code
+			dizet_code = dizet_template.safe_substitute(
+					replacement_sin2theta=str(sin2theta_value)
+			)
+			with open(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f"), "w") as dizet_file:
+				dizet_file.write(dizet_code)
+			
+			zfusr_code = zfusr_template.safe_substitute(
+					replacement_sin2theta_label=sin2theta_label,
+					replacement_n_energy_values=str(len(energy_values)),
+					replacement_energy_min=str(args.energy_min),
+					replacement_energy_delta=str(args.energy_delta)
+			)
+			with open(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfusr6_42.f"), "w") as zfusr_file:
+				zfusr_file.write(zfusr_code)
+			
 			# compile ZFitter
-			os.system(os.path.expandvars("cd $CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter && g77 -g  -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore -fugly-logint -ftypeless-boz  *.f -o zfitr642.exe"))
+			os.system(os.path.expandvars("rm $CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfitr642.exe"))
+			os.system(os.path.expandvars("cd $CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter && g77 -g  -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore -fugly-logint -ftypeless-boz *.f -o zfitr642.exe"))
 
 			# starting ZFitter
 			os.system(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfitr642.exe"))
 
-	# Writing data into TFile
-	output_file = ROOT.TFile(args.output, "RECREATE")
-
-	for quark in ["D", "U"]:
-		for sin2theta_value in sin2theta_values:
+			# Writing data into TFile
 			tree=ROOT.TTree()
-			tree.ReadFile("PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_value), "energy:xsec:pol")
-			tree.SetName("{quark} {value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_value))
-			tools.write_object(output_file, tree, "{quark}/{quark}{value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_value.replace("=", "")))
-			output_file.Write()
+			tree.ReadFile("PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label), "energy:xsec:pol")
+			tools.write_object(output_file, tree, "{quark}/{quark}{value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_label.replace("=", "")))
+			
+			#Deleting .dat files after they were written into the TFile
+			os.system("rm PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label))
+	
+	output_file.Write()
 	output_file.Close()
 	print "Saved outputs in\n\t{output_file}".format(output_file=args.output)
-
-	#Deleting .dat files after they were written into the TFile
-	for sin2theta_value in sin2theta_values:
-		os.system("rm PolarizationAndXsecQuarkU_{value}.dat".format(value=sin2theta_value))
-		os.system("rm PolarizationAndXsecQuarkD_{value}.dat".format(value=sin2theta_value))
 
