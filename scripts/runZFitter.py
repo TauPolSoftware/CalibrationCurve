@@ -77,7 +77,7 @@ if __name__ == "__main__":
 			# setting sin^2 theta_W value
 			if sin2theta_low is None:
 				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f"), inplace=True):
-					print line.rstrip().replace("SINEFF=UNDEFINED", sin2theta_values[0])
+					print line.rstrip().replace("SINEFF=0.200", sin2theta_values[0])
 				print "(SINEFF=UNDEFINED to {value})".format(value=sin2theta_values[0])
 			else:
 				for line in fileinput.input(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/dizet6_42.f"), inplace=True):
