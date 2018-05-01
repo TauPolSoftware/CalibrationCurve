@@ -89,7 +89,7 @@ if __name__ == "__main__":
 			# Writing data into TFile
 			tree=ROOT.TTree()
 			tree.ReadFile("PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label), "energy:xsec:pol")
-			tools.write_object(output_file, tree, "{quark}/{quark}{value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_label.replace("=", "")))
+			tools.write_object(output_file, tree, "{quark}/{quark}{value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_label))
 			
 			#Deleting .dat files after they were written into the TFile
 			os.system("rm PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label))
