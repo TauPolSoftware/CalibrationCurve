@@ -10,15 +10,10 @@ import ROOT
 
 import TauPolSoftware.CalibrationCurve.tools as tools
 
-
-#Function which calculates the error for an expression of two variables
-def calcerror(a,ae,b,be,string):
-	if string == "sum":
-		return math.sqrt(pow(ae,2)+pow(be,2))
-	if string == "product":
-		return math.sqrt(pow(b*ae,2)+pow(a*be,2))
-	if string == "ratio":
-		return math.sqrt(pow(ae/b,2)+pow(a*be/pow(b,2),2))
+# the calculations here use the uncertainties package for the error propagation
+# use <return value>.nominal_value to retrive the central value
+# http://uncertainties-python-package.readthedocs.io/en/latest/user_guide.html
+import TauPolSoftware.CalibrationCurve.uncertainties.uncertainties as uncertainties
 
 
 if __name__ == "__main__":
@@ -51,69 +46,81 @@ if __name__ == "__main__":
 	input_file_zfitter = ROOT.TFile(args.input_zfitter, "READ")
 	output_file = ROOT.TFile(args.output, "RECREATE")
 
+	#Create a new Tree
+	output_file.cd()
+	output_tree = ROOT.TTree()
+
+	#Create variables which are going to be written in the branches
+	sin2theta_branch = numpy.zeros(1, dtype=float)
+	energy_branch = numpy.zeros(1, dtype=float)
+	xsec_branch = numpy.zeros(1, dtype=float)
+	xsecerr_branch = numpy.zeros(1, dtype=float)
+	pol_branch = numpy.zeros(1, dtype=float)
+	polerr_branch = numpy.zeros(1, dtype=float)
+
+	#Create a branch for each variable in the tree
+	output_tree.Branch("sin2theta", sin2theta_branch, "sin2theta/D")
+	output_tree.Branch("energy", energy_branch, "energy/D")
+	output_tree.Branch("xsec", xsec_branch, "xsec/D")
+	output_tree.Branch("xsecerr", xsecerr_branch, "xsecerr/D")
+	output_tree.Branch("pol", pol_branch, "pol/D")
+	output_tree.Branch("polerr", polerr_branch, "polerr/D")
+
 	# create an array for sin^2 theta_W values
-	sin2theta_values = ["SINEFF={value}".format(value=value) for value in numpy.arange(args.sin2theta_min, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta)]
+	sin2theta_values = list(numpy.arange(args.sin2theta_min, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta))
+	sin2theta_labels = ["{value:04}".format(value=int(value*1000)) for value in sin2theta_values]
 
 	#loop over all values of sin^2 theta_W
-	for sin2theta_value in sin2theta_values:
+	for sin2theta_value, sin2theta_label in zip(sin2theta_values, sin2theta_labels):
+		
+		sin2theta_branch[0] = sin2theta_value
 	
 		#Read in the relevant data from input
-		down_values_tree = input_file_zfitter.Get("Down/Down{value}".format(value=sin2theta_value.replace("=","")))
-		up_values_tree = input_file_zfitter.Get("Up/Up{value}".format(value=sin2theta_value.replace("=","")))
-
-		#Create a new Tree
-		output_file.cd()
-		output_tree = ROOT.TTree()
-		output_tree.SetName("Combined {value}".format(value=sin2theta_value))
-
-		#Create variables which are going to be written in the branches
-		energy = numpy.zeros(1,dtype=float)
-		xsec = numpy.zeros(1,dtype=float)
-		xsecerr = numpy.zeros(1,dtype=float)
-		pol = numpy.zeros(1,dtype=float)
-		polerr = numpy.zeros(1,dtype=float)
-
-		#Create a branch for each variable in the tree
-		output_tree.Branch("energy", energy, "energy/D")
-		output_tree.Branch("xsec", xsec, "xsec/D")
-		output_tree.Branch("xsecerr", xsecerr, "xsecerr/D")
-		output_tree.Branch("pol", pol, "pol/D")
-		output_tree.Branch("polerr", polerr, "polerr/D")
+		down_values_tree = input_file_zfitter.Get("Down/Down{value}".format(value=sin2theta_label))
+		up_values_tree = input_file_zfitter.Get("Up/Up{value}".format(value=sin2theta_label))
 
 		##Calculate values for the variables and fill the branches with them	
 		#loop over each entry
 		assert (down_values_tree.GetEntries() == up_values_tree.GetEntries())
 		assert (down_values_tree.GetEntries() == quark_fractions_tree.GetEntries())
-		for entry in range(down_values_tree.GetEntries()):
+		for entry in xrange(down_values_tree.GetEntries()):
 			down_values_tree.GetEntry(entry)
 			up_values_tree.GetEntry(entry)
 			quark_fractions_tree.GetEntry(entry)
+			assert (down_values_tree.energy == up_values_tree.energy)
+			assert (down_values_tree.energy == quark_fractions_tree.energy)
 		
-			#Copy energy
-			energy[0] = down_values_tree.energy
-
-			#Calculate ratios and corresponding errors of up-type and down-type quarks
-			rU = (quark_fractions_tree.up+quark_fractions_tree.charm)/(quark_fractions_tree.up+quark_fractions_tree.charm+quark_fractions_tree.down+quark_fractions_tree.bottom+quark_fractions_tree.strange)
-			rD = 1-rU
-			rerr = calcerror(quark_fractions_tree.up+quark_fractions_tree.charm,math.sqrt(pow(quark_fractions_tree.uperr,2)+pow(quark_fractions_tree.charmerr,2)),quark_fractions_tree.up+quark_fractions_tree.charm+quark_fractions_tree.down+quark_fractions_tree.bottom+quark_fractions_tree.strange,math.sqrt(pow(quark_fractions_tree.uperr,2)+pow(quark_fractions_tree.charmerr,2)+pow(quark_fractions_tree.downerr,2)+pow(quark_fractions_tree.bottomerr,2)+pow(quark_fractions_tree.strangeerr,2)),"ratio")
-		
-			#Calculate combined polarisation and corresponding errors
-			denom = rU*up_values_tree.xsec+rD*down_values_tree.xsec
-			pol[0] = (rU*up_values_tree.pol*up_values_tree.xsec+rD*down_values_tree.pol*down_values_tree.xsec)/denom
-			deriv1 = (up_values_tree.pol*up_values_tree.xsec)/denom-(up_values_tree.pol*up_values_tree.xsec*rU)*(up_values_tree.xsec-down_values_tree.xsec)/pow(denom,2)
-			deriv2 = -(down_values_tree.pol*down_values_tree.xsec)/denom-(down_values_tree.pol*down_values_tree.xsec*rD)*(up_values_tree.xsec-down_values_tree.xsec)/pow(denom,2)
-			polerr[0] = math.sqrt(pow(deriv1,2)+pow(deriv2,2))*rerr
-
-			#Calculate combined cross-section and corresponding errors
-			xsec[0] = up_values_tree.xsec*(quark_fractions_tree.up+quark_fractions_tree.charm)+down_values_tree.xsec*(quark_fractions_tree.down+quark_fractions_tree.strange+quark_fractions_tree.bottom)
-			xsecerr[0] = math.sqrt(pow(up_values_tree.xsec,2)*(pow(quark_fractions_tree.erru,2)+pow(quark_fractions_tree.charmerr,2))+pow(down_values_tree.xsec,2)*(pow(quark_fractions_tree.downerr,2)+pow(quark_fractions_tree.strangeerr,2)+pow(quark_fractions_tree.bottomerr,2)))
-		
+			# Calculate ratios and corresponding errors of up-type and down-type quarks
+			up = uncertainties.ufloat(quark_fractions_tree.up, quark_fractions_tree.uperr)
+			down = uncertainties.ufloat(quark_fractions_tree.down, quark_fractions_tree.downerr)
+			strange = uncertainties.ufloat(quark_fractions_tree.strange, quark_fractions_tree.strangeerr)
+			charm = uncertainties.ufloat(quark_fractions_tree.charm, quark_fractions_tree.charmerr)
+			bottom = uncertainties.ufloat(quark_fractions_tree.bottom, quark_fractions_tree.bottomerr)
+			
+			ratio_up = (up + charm) / (up + charm + down + strange + bottom)
+			ratio_down = (down + strange + bottom) / (up + charm + down + strange + bottom)
+			
+			xsec_up = uncertainties.ufloat(up_values_tree.xsec, 0.0)
+			xsec_down = uncertainties.ufloat(down_values_tree.xsec, 0.0)
+			pol_up = uncertainties.ufloat(up_values_tree.pol, 0.0)
+			pol_down = uncertainties.ufloat(down_values_tree.pol, 0.0)
+			
+			pol = (pol_up * ratio_up * xsec_up + pol_down * ratio_down * xsec_down) / (ratio_up * xsec_up + ratio_down * xsec_down)
+			xsec = (xsec_up * (up + charm)) + (xsec_down * (down + strange + bottom))
+			
+			# fill branches
+			energy_branch[0] = quark_fractions_tree.energy
+			xsec_branch[0] = xsec.nominal_value
+			xsecerr_branch[0] = xsec.std_dev
+			pol_branch[0] = pol.nominal_value
+			polerr_branch[0] = pol.std_dev
+			
 			#Fill the calculated data into the tree
 			output_tree.Fill()
-
-		#Write the tree into the Datafile
-		output_file.cd()
-		tools.write_object(output_file, output_tree, "Combined/Combined{value}".format(value=sin2theta_value.replace("=","")))
+		
+	#Write the tree into the Datafile
+	output_file.cd()
+	tools.write_object(output_file, output_tree, "calibration")
 
 	#Close the files
 	output_file.Close()
