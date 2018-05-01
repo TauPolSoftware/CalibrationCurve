@@ -1,215 +1,139 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import ROOT
-import os
+import argparse
 import math
-import numpy as np
+import numpy
+import os
+
+import ROOT
 
 import TauPolSoftware.CalibrationCurve.tools as tools
 
-
-#Function to calculate the error of a product
-def producterr2(x,xerr,y,yerr):
-	return math.sqrt(pow(x*yerr,2)+pow(y*xerr,2))
-
-#Function to calculate the error of a product of 3 constituents
-def producterr3(x,xerr,y,yerr,z,zerr):
-	return math.sqrt(pow(y*z*xerr,2)+pow(x*z*yerr,2)+pow(x*y*zerr,2))
-
-#Function to calculate the error of a ratio
-def ratioerr(x,xerr,y,yerr):
-	return math.sqrt(pow(xerr/y,2)+pow(x*yerr/pow(y,2),2))
+# the calculations here use the uncertainties package for the error propagation
+# use <return value>.nominal_value to retrive the central value
+# http://uncertainties-python-package.readthedocs.io/en/latest/user_guide.html
+import TauPolSoftware.CalibrationCurve.uncertainties.uncertainties as uncertainties
 
 
-#Open ROOT file and extracting the example count histogram
-Histfile=ROOT.TFile("genBosonLV_M__.root")
-Nhist=Histfile.Get("ztt")
-
-poltree=ROOT.TTree()
-poltree.SetName("calibrationcurve")
-poltest=np.zeros(1,dtype=float)
-poltreelvl=np.zeros(1,dtype=float)
-poltesterr=np.zeros(1,dtype=float)
-sin2ttest=np.zeros(1,dtype=float)
-poltree.Branch("poltest",poltest,"Polarisation/D")
-poltree.Branch("poltreelvl",poltreelvl,"Polarisationtree/D")
-poltree.Branch("poltesterr",poltesterr,"Polarisationerr/D")
-poltree.Branch("sin2ttest",sin2ttest,"sin2T/D")
+def get_weight_string(efficiency_histogram):
+	efficiency_histogram.Scale(1.0 / efficiency_histogram.Integral())
+	bin_edges = tools.get_bin_edges(efficiency_histogram)
+	bin_contents = tools.get_bin_contents(efficiency_histogram)
+	return " + ".join(["((energy>={low})*(energy<{high})*{content})".format(low=low, high=high, content=content) for low, high, content in zip(bin_edges[:-1], bin_edges[1:], bin_contents)])
 
 
-#Extracting bin information from the count histogram
-NbinN=Nhist.GetNbinsX()
-LowEdgeN=Nhist.GetBinLowEdge(1)
-HighEdgeN=Nhist.GetBinLowEdge(NbinN+1)
-StepN=(HighEdgeN-LowEdgeN)/NbinN
-#print "Intervall: ", [LowEdgeN,HighEdgeeff],";", "Nbin =",NbinN,";", "step =", Stepeff
-
-lendsin2T=0.200
-rendsin2T=0.250
-stepsin2T=0.0025
-nstepsin2T=(rendsin2T-lendsin2T)/stepsin2T
-sineff=[]
-for i in range(int(nstepsin2T+2)):
-	sineff.append("SINEFF%s"%(lendsin2T+i*stepsin2T))
-
-#Initialising final Graph
-finalgraph=ROOT.TGraphErrors(len(sineff))
-finalval=ROOT.TGraph(len(sineff))
-finalerr=ROOT.TGraph(len(sineff))
-workinggraph=ROOT.TGraph(len(sineff))
-
-#Opening the datafile
-Datafile=ROOT.TFile("data.root")
-
-for l in range(len(sineff)):
+if __name__ == "__main__":
 	
-	#Extracting Polarisation data
-	ttree=Datafile.Get("Combined/Combined%s"%sineff[l])
-	ttree.Draw("pol:energy>>gpol(%s,%s,%s)"%(NbinN,LowEdgeN,HighEdgeN))
-	polGraph=ROOT.TGraph(ttree.GetSelectedRows(),ttree.GetV2(),ttree.GetV1())
-	ttree.Draw("polerr:energy>>gpolerr(%s,%s,%s)"%(NbinN,LowEdgeN,HighEdgeN))
-	polerrGraph=ROOT.TGraph(ttree.GetSelectedRows(),ttree.GetV2(),ttree.GetV1())
-
-
-	#Copying count-histogram
-	polNhist=ROOT.TH1D(Nhist)
-
-	#Looping over each bin of the count-histogram
-	for n in range(NbinN):
-
-		#Initialise temporare variables
-		N=polGraph.GetN()
-		entemp=ROOT.Double(0.)
-		poltemp=ROOT.Double(0.)
-
-
-		#Initialising final variables
-		energyfinal=ROOT.Double(0.)
-		polfinal=ROOT.Double(0.)
-		polerrfinal=ROOT.Double(0.)
-		Nfinal=ROOT.Double(0.)
-		Nfinalerr=ROOT.Double(0.)
-		Nfinal=Nhist.GetBinContent(n+1)
-#		Nfinalerr=
-		energyfinal=ROOT.Double(Nhist.GetXaxis().GetBinCenter(n+1))
-
-		#Looping over each point of the graphs
-		for i in range(N):
-			polGraph.GetPoint(i,entemp,poltemp)
-
-			#If the bincenter equals the energy of a point, set the values
-			if energyfinal==entemp:
-
-				polGraph.GetPoint(i,energyfinal,polfinal)
-				polerrGraph.GetPoint(i,energyfinal,polerrfinal)
-
-				break
-
-			#If the bincenter does not equal the energy of a point, do a linear Regression with the adjacent points and calculate the values with it
-			elif energyfinal<entemp:
-
-				polfinal=polGraph.Eval(energyfinal)
-				polerrfinal=polerrGraph.Eval(energyfinal)
-
-				break
-
-		#Fill the calculated final values into the histograms
-		polNhist.SetBinContent(n+1,polfinal*Nfinal)
-		polNhist.SetBinError(n+1,producterr2(polfinal,polerrfinal,Nfinal,Nfinalerr))
-
-
-	#Calculate the integral values of the histograms
-	polNinterr=ROOT.Double(0.)
-	Ninterr=ROOT.Double(0.)
-	polNint=polNhist.IntegralAndError(1,NbinN,polNinterr)
-	Nint=Nhist.IntegralAndError(1,NbinN,Ninterr)
-
-	#Calculate average polarisation from the integrated values
-	averagepol=polNint/Nint
-	averagepolerr=ratioerr(polNint,polNinterr,Nint,Ninterr)
-
-	print "%s +/- %s" %(averagepol,averagepolerr)
-
-	#Fill the final values into a graph
-	finalgraph.SetPoint(l,lendsin2T+l*stepsin2T,averagepol)
-	finalgraph.SetPointError(l,0,averagepolerr)
-	finalval.SetPoint(l,lendsin2T+l*stepsin2T,averagepol)
-	finalerr.SetPoint(l,lendsin2T+l*stepsin2T,averagepolerr)
-	workinggraph.SetPoint(l,averagepol,lendsin2T+l*stepsin2T)
+	parser = argparse.ArgumentParser(description="Combine the data of up-type and down-type quarks from ZFitter and using the NLOPDF and calculate their errors.")
 	
-	poltest[0]=averagepol
-	sin2ttest[0]=lendsin2T+l*stepsin2T
-	poltesterr[0]=averagepolerr
-	poltreelvl[0]=(-2+8*(lendsin2T+l*stepsin2T))
-	poltree.Fill()
+	parser.add_argument("--input-calibration", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/calibration.root",
+	                    help="Input *.root file containing calibration tree. [Default: %(default)s]")
+	
+	parser.add_argument("--input-efficiency", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/genBosonLV_M__.root",
+	                    help="Input *.root file containing efficiency histogram as a function of the energy. [Default: %(default)s]")
+	parser.add_argument("--efficiency-histogram", default="ztt",
+	                    help="Path to efficiency histogram inside *.root file. [Default: %(default)s]")
+	
+	parser.add_argument("--pol-binning", default=None,
+	                    help="Binning for polarisation histogram. [Default: %(default)s]")
+	parser.add_argument("--sin2theta-binning", default=None,
+	                    help="Binning for sin^2 theta_W histogram. [Default: %(default)s]")
+	
+	parser.add_argument("-o", "--output", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/calibrationcurve.root",
+	                    help="Output *.root file. [Default: %(default)s]")
+	
+	args = parser.parse_args()
+	args.input_calibration = os.path.expandvars(args.input_calibration)
+	args.input_efficiency = os.path.expandvars(args.input_efficiency)
+	args.output = os.path.expandvars(args.output)
 
-	if lendsin2T+l*stepsin2T==0.23:
-		polGraph.SetTitle("Polarization of #tau's at sin^{2}(#theta_{W})=0.23")
-		polGraph.GetXaxis().SetTitle("#sqrt{s}")
-		polGraph.GetYaxis().SetTitle("Polarization")
-		myfirstCanvas=ROOT.TCanvas()
-		myfirstCanvas.cd()
-		polGraph.Draw()
-		myfirstCanvas.SaveAs("PolarisationGraph.pdf")
+	# Open ROOT file and extracting the example count histogram
+	input_efficiency_file = ROOT.TFile(args.input_efficiency, "OPEN")
+	efficiency_histogram = input_efficiency_file.Get(args.efficiency_histogram)
+	efficiency_histogram.SetDirectory(0)
+	input_efficiency_file.Close()
+	
+	# normalise efficiency histogram
+	efficiency_histogram.Scale(1.0 / efficiency_histogram.Integral())
+	
+	input_calibration_file = ROOT.TFile(args.input_calibration, "OPEN")
+	input_tree = input_calibration_file.Get("calibration")
+	
+	output_file = ROOT.TFile(args.output, "RECREATE")
+	output_tree = input_tree.CloneTree(0)
+	
+	eff_branch = numpy.zeros(1, dtype=float)
+	efferr_branch = numpy.zeros(1, dtype=float)
+	output_tree.Branch("eff", eff_branch, "eff/D")
+	output_tree.Branch("efferr", efferr_branch, "efferr/D")
+	
+	n_entries = input_tree.GetEntries()
+	pol_values = {}
+	eff_values = {}
+	for entry in xrange(input_tree.GetEntries()):
+		input_tree.GetEntry(entry)
+		
+		energy_bin = efficiency_histogram.FindBin(input_tree.energy)
+		if (energy_bin < 1) or (energy_bin > efficiency_histogram.GetNbinsX()):
+			eff_branch[0] = 0.0
+			efferr_branch[0] = 0.0
+		else:
+			eff_branch[0] = efficiency_histogram.GetBinContent(energy_bin)
+			efferr_branch[0] = efficiency_histogram.GetBinError(energy_bin)
+		
+		pol_values.setdefault(input_tree.sin2theta, []).append(uncertainties.ufloat(input_tree.pol, input_tree.polerr))
+		eff_values.setdefault(input_tree.sin2theta, []).append(uncertainties.ufloat(eff_branch[0], efferr_branch[0]))
+		
+		output_tree.Fill()
+	
+	tools.write_object(output_file, output_tree, "calibration")
+	
+	final_calibration = {}
+	for sin2theta_value, tmp_eff_values in eff_values.iteritems():
+		pol_value = sum(numpy.array(pol_values[sin2theta_value]) * numpy.array(tmp_eff_values)) / sum(numpy.array(tmp_eff_values))
+		final_calibration[sin2theta_value] = pol_value
+	
+	n_points = len(final_calibration)
+	graph_values_sin2theta = numpy.array(sorted(final_calibration.keys()))
+	graph_errors_sin2theta = numpy.array([0.0] * n_points)
+	graph_values_pol = numpy.array([final_calibration[sin2theta_value].nominal_value for sin2theta_value in graph_values_sin2theta])
+	graph_errors_pol = numpy.array([final_calibration[sin2theta_value].std_dev for sin2theta_value in graph_values_sin2theta])
+	graph_values_pol_plus_sigma = graph_values_pol + graph_errors_pol
+	graph_values_pol_minus_sigma = graph_values_pol - graph_errors_pol
+	
+	graph_sin2theta_vs_pol = ROOT.TGraphErrors(n_points, graph_values_pol, graph_values_sin2theta, graph_errors_pol, graph_errors_sin2theta)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("mixing angle")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("average polarisation")
+	
+	graph_pol_vs_sin2theta = ROOT.TGraphErrors(n_points, graph_values_sin2theta, graph_values_pol, graph_errors_sin2theta, graph_errors_pol)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("average polarisation")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("mixing angle")
+	
+	graph_sin2theta_vs_pol_plus_sigma = ROOT.TGraph(n_points, graph_values_pol_plus_sigma, graph_values_sin2theta)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("average polarisation +1#sigma")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("mixing angle")
+	
+	graph_sin2theta_vs_pol_minus_sigma = ROOT.TGraph(n_points, graph_values_pol_minus_sigma, graph_values_sin2theta)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("average polarisation -1#sigma")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("mixing angle")
+	
+	graph_pol_plus_sigma_vs_sin2theta = ROOT.TGraph(n_points, graph_values_sin2theta, graph_values_pol_plus_sigma)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("mixing angle")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("average polarisation +1#sigma")
+	
+	graph_pol_minus_sigma_vs_sin2theta = ROOT.TGraph(n_points, graph_values_sin2theta, graph_values_pol_minus_sigma)
+	graph_sin2theta_vs_pol.GetXaxis().SetTitle("mixing angle")
+	graph_sin2theta_vs_pol.GetYaxis().SetTitle("average polarisation -1#sigma")
+	
+	output_file.cd()
+	tools.write_object(output_file, graph_sin2theta_vs_pol, "sin2theta_vs_pol")
+	tools.write_object(output_file, graph_pol_vs_sin2theta, "pol_vs_sin2theta")
+	tools.write_object(output_file, graph_sin2theta_vs_pol_plus_sigma, "sin2theta_vs_pol_plus_sigma")
+	tools.write_object(output_file, graph_sin2theta_vs_pol_minus_sigma, "sin2theta_vs_pol_minus_sigma")
+	tools.write_object(output_file, graph_pol_plus_sigma_vs_sin2theta, "pol_plus_sigma_vs_sin2theta")
+	tools.write_object(output_file, graph_pol_minus_sigma_vs_sin2theta, "pol_minus_sigma_vs_sin2theta")
+	
+	output_file.Close()
+	print "Saved outputs in\n\t{output_file}".format(output_file=args.output)
 
-
-
-#Calculate the average Polarization for a given value of sin2T
-sin2Tval=0.2311612
-print "For a sin2T value of %s a polarization value of %s +/- %s is obtained." %(sin2Tval,finalval.Eval(sin2Tval),finalerr.Eval(sin2Tval))
-
-#Calculate the sin2T for a given value of the average Polarization
-averagePol=-0.15514
-averagePolerr=0.02
-print "For an average Polarization value of %s +/- %s a sin2T value of %s +/- %s is obtained" %(averagePol,averagePolerr,workinggraph.Eval(averagePol),workinggraph.Eval(averagePol+averagePolerr)-workinggraph.Eval(averagePol))
-
-
-mythirdCanvas=ROOT.TCanvas()
-Nhist.SetTitle("Efficiency-Histogram")
-Nhist.GetXaxis().SetTitle("#sqrt{s}")
-Nhist.GetYaxis().SetTitle("efficiency")
-Nhist.Draw("L")
-mythirdCanvas.SaveAs("Efficiency-Histogram.pdf")
-
-
-"""
-myfourthCanvas=ROOT.TCanvas()
-effhist2.SetTitle("Efficiency-Histogram")
-effhist2.GetXaxis().SetTitle("#sqrt{s}")
-effhist2.GetYaxis().SetTitle("efficiency")
-effhist2.Draw()
-myfourthCanvas.SaveAs("Efficiency-Histogram2.pdf")
-"""
-myCanvas=ROOT.TCanvas()
-
-"""
-myCanvas.Divide(4,2)
-myCanvas.cd(1)
-polGraph.Draw()
-myCanvas.cd(2)
-polerrGraph.Draw()
-myCanvas.cd(3)
-xsecGraph.Draw()
-myCanvas.cd(4)
-xsecerrGraph.Draw()
-myCanvas.cd(5)
-effhist.Draw()
-myCanvas.cd(6)
-polxseceffhist.Draw()
-myCanvas.cd(7)
-xseceffhist.Draw()
-myCanvas.cd(8)
-"""
-finalgraph.SetTitle("Calibration Curve")
-finalgraph.GetXaxis().SetTitle("sin^{2}(#theta_{W})")
-finalgraph.GetYaxis().SetTitle("#LTP_{#tau}#GT")
-finalgraph.Draw()
-myCanvas.SaveAs("CalibrationGraph.pdf")
-#os.system("gnome-open testhist.pdf")
-os.system("gnome-open CalibrationGraph.pdf")
-#Histfile.Close()
-
-Datafile=ROOT.TFile("data.root","UPDATE")
-tools.write_object(Datafile,poltree,"calibrationvalues")
-Datafile.Close()
