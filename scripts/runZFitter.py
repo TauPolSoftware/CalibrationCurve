@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import fileinput
 import numpy
 import string
 import os
@@ -53,7 +52,9 @@ if __name__ == "__main__":
 	
 	# starting the process for U and D quarks
 	for quark in ["D", "U"]:
-	
+		output_tree = ROOT.TTree()
+		output_tree.SetName("zfitter_{quark}".format(quark=quark.replace("D", "down").replace("U", "up")))
+		
 		# load templates for replacements in fortran code
 		zfusr_template = None
 		with open(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/FilesToSubstitute/zfusr6_42{quark}.f").format(quark=quark.lower())) as zfusr_file:
@@ -85,14 +86,32 @@ if __name__ == "__main__":
 
 			# starting ZFitter
 			os.system(os.path.expandvars("$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter/zfitr642.exe"))
+			
+			# add sin^2 theta_W column
+			zfitter_dat_filename = "PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label)
+			zfitter_output = numpy.genfromtxt(fname=zfitter_dat_filename)
+			zfitter_output = numpy.concatenate((zfitter_output, numpy.full((zfitter_output.shape[0], 1), sin2theta_value)), axis=1)
+			numpy.savetxt(zfitter_dat_filename, zfitter_output)
 
-			# Writing data into TFile
-			tree=ROOT.TTree()
-			tree.ReadFile("PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label), "energy:xsec:pol")
-			tools.write_object(output_file, tree, "{quark}/{quark}{value}".format(quark=quark.replace("D", "Down").replace("U", "Up"), value=sin2theta_label))
+			# Writing data into tree
+			output_tree.ReadFile(zfitter_dat_filename, "energy:xsec:pol:sin2theta")
 			
 			#Deleting .dat files after they were written into the TFile
 			os.system("rm PolarizationAndXsecQuark{quark}_{value}.dat".format(quark=quark, value=sin2theta_label))
+		
+		# save tree
+		tools.write_object(output_file, output_tree, output_tree.GetName())
+		
+		# fill histogram
+		output_tree.Draw("pol:sin2theta:energy>>{tree_name}_pol_vs_sin2theta_vs_energy({energy_bins},{energy_low},{energy_high},{sin2theta_bins},{sin2theta_low},{sin2theta_high})".format(
+				tree_name = output_tree.GetName(),
+				energy_bins = len(energy_values),
+				energy_low = (args.energy_min - (args.energy_delta/2.0)),
+				energy_high = (args.energy_max + (args.energy_delta/2.0)),
+				sin2theta_bins = len(sin2theta_values),
+				sin2theta_low = (args.sin2theta_min - (args.sin2theta_delta/2.0)),
+				sin2theta_high = (args.sin2theta_max + (args.sin2theta_delta/2.0))
+		), "", "prof goff")
 	
 	output_file.Write()
 	output_file.Close()
