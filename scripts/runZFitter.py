@@ -15,16 +15,16 @@ if __name__ == "__main__":
 	
 	parser = argparse.ArgumentParser(description="Run (modified) ZFitter. Obtaining P(sqrt s) and sigma(sqrt s) from ZFitter for different sin^2 theta_W and setting range and steps of energy for which the values should be calculated.")
 	
-	parser.add_argument("--sin2theta-min", type=float, default=0.200,
+	parser.add_argument("--sin2theta-min", type=float, default=0.150,
 	                    help="Min. sin^2 theta_W value for scan. [Default: %(default)s]")
-	parser.add_argument("--sin2theta-max", type=float, default=0.250,
+	parser.add_argument("--sin2theta-max", type=float, default=0.300,
 	                    help="Max. sin^2 theta_W value for scan. [Default: %(default)s]")
-	parser.add_argument("--sin2theta-delta", type=float, default=0.005,
+	parser.add_argument("--sin2theta-delta", type=float, default=0.0025,
 	                    help="Sin^2 theta_W step size for scan. [Default: %(default)s]")
 	
-	parser.add_argument("--energy-min", type=float, default=80.0,
+	parser.add_argument("--energy-min", type=float, default=10.0,
 	                    help="Min. sqrt(s) value for scan. [Default: %(default)s]")
-	parser.add_argument("--energy-max", type=float, default=110.0,
+	parser.add_argument("--energy-max", type=float, default=200.0,
 	                    help="Max. sqrt(s) value for scan. [Default: %(default)s]")
 	parser.add_argument("--energy-delta", type=float, default=0.25,
 	                    help="Sqrt(s) step size for scan. [Default: %(default)s]")
