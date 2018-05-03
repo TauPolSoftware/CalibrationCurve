@@ -1,6 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import array
+
 import ROOT
+
+
+def get_binning(root_histogram, axisNumber=0):
+	axis = None
+	if axisNumber == 0:
+		axis = root_histogram.GetXaxis()
+	elif axisNumber == 1:
+		axis = root_histogram.GetYaxis()
+	elif axisNumber == 2:
+		axis = root_histogram.GetZaxis()
+	return array.array("d", [axis.GetBinLowEdge(binIndex) for binIndex in xrange(1, axis.GetNbins()+2)])
 
 
 def write_object(root_file, root_object, path):
