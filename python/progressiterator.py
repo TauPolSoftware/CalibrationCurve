@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 
-from Artus.Utility.tools import get_tty_size
+from TauPolSoftware.CalibrationCurve.tools import get_tty_size
 
 
 import math
