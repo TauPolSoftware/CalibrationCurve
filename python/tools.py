@@ -1,8 +1,41 @@
 # -*- coding: utf-8 -*-
 
 import array
+import multiprocessing
+import time
 
 import ROOT
+
+import TauPolSoftware.CalibrationCurve.progressiterator as pi
+
+
+def parallelize(function, arguments_list, n_processes=1, description=None):
+	if n_processes <= 1:
+		results = []
+		for arguments in pi.ProgressIterator(arguments_list, description=(description if description else "calling "+str(function))):
+			results.append(function(arguments))
+		return results
+	else:
+		pool = multiprocessing.Pool(processes=max(1, min(n_processes, len(arguments_list))))
+		results = pool.map_async(function, arguments_list, chunksize=1)
+		n_tasks = len(arguments_list)
+		left = n_tasks-1
+		progress_iterator = pi.ProgressIterator(range(n_tasks), description=(description if description else "calling "+str(function)))
+		progress_iterator.next()
+		while (True):
+			ready = results.ready()
+			remaining = results._number_left
+			if ready or (remaining < left):
+				for i in range(left-remaining):
+					progress_iterator.next()
+				left = remaining
+			if ready:
+				break
+			time.sleep(1.0)
+		returnvalue = results.get(9999999)
+		pool.close() # necessary to actually terminate the processes
+		pool.join()  # without these two lines, they happen to live until the whole program terminates
+		return returnvalue
 
 
 def get_binning(root_histogram, axisNumber=0):
