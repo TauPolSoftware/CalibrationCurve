@@ -1,12 +1,20 @@
 
 # -*- coding: utf-8 -*-
 
-from TauPolSoftware.CalibrationCurve.tools import get_tty_size
-
-
+import array
+import fcntl
 import math
 import subprocess
 import sys
+
+
+def get_tty_size():
+	size = array.array("B", [0, 0, 0, 0])
+	try:
+		fcntl.ioctl(0, termios.TIOCGWINSZ, size, True)
+		return (size[0], size[2])
+	except:
+		return size
 
 
 class ProgressIterator(object):

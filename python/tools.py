@@ -1,22 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import array
-import fcntl
 import multiprocessing
 import time
 
 import ROOT
 
 import TauPolSoftware.CalibrationCurve.progressiterator as pi
-
-
-def get_tty_size():
-	size = array.array("B", [0, 0, 0, 0])
-	try:
-		fcntl.ioctl(0, termios.TIOCGWINSZ, size, True)
-		return (size[0], size[2])
-	except:
-		return size
 
 
 def parallelize(function, arguments_list, n_processes=1, description=None):
