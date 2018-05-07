@@ -106,14 +106,16 @@ if __name__ == "__main__":
 	polarisation_values = get_polarisation_values(args.zfitter_output, sin2theta_edges, energy_distribution_up, energy_distribution_down)
 	
 	final_calibration = {uncertainties.ufloat(sin2theta_value, 0.0) : uncertainties.ufloat(polarisation_value, 0.0) for sin2theta_value, polarisation_value in zip(sin2theta_values, polarisation_values)}
+	sorted_keys = sorted(final_calibration.keys(), key=lambda sin2theta: sin2theta.nominal_value)
 	
 	output_file = ROOT.TFile(args.output, "RECREATE")
 	
 	n_points = len(final_calibration)
-	graph_values_sin2theta = numpy.array(sorted(final_calibration.keys()))
-	graph_errors_sin2theta = numpy.array([0.0] * n_points)
-	graph_values_pol = numpy.array([final_calibration[sin2theta_value].nominal_value for sin2theta_value in graph_values_sin2theta])
-	graph_errors_pol = numpy.array([final_calibration[sin2theta_value].std_dev for sin2theta_value in graph_values_sin2theta])
+	
+	graph_values_sin2theta = numpy.array([key.nominal_value for key in sorted_keys])
+	graph_errors_sin2theta = numpy.array([key.std_dev for key in sorted_keys])
+	graph_values_pol = numpy.array([final_calibration[key].nominal_value for key in sorted_keys])
+	graph_errors_pol = numpy.array([final_calibration[key].std_dev for key in sorted_keys])
 	graph_values_pol_plus_sigma = graph_values_pol + graph_errors_pol
 	graph_values_pol_minus_sigma = graph_values_pol - graph_errors_pol
 	
