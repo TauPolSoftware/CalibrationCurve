@@ -76,9 +76,9 @@ if __name__ == "__main__":
 	parser.add_argument("-z", "--zfitter-output", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/zfitter.root",
 	                    help="ZFitter output *.root file. [Default: %(default)s]")
 	
-	parser.add_argument("-u", "--energy-distribution-up",
+	parser.add_argument("-u", "--energy-distribution-up", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/energy_distribution.root:up",
 	                    help="Histogram containing u ubar -> Z events in bins of the true Z boson mass (u=u,c). Format: path/to/file.root:path/to/histogram.")
-	parser.add_argument("-d", "--energy-distribution-down",
+	parser.add_argument("-d", "--energy-distribution-down", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/energy_distribution.root:down",
 	                    help="Histogram containing d dbar -> Z events in bins of the true Z boson mass (d=d,s,b). Format: path/to/file.root:path/to/histogram.")
 	
 	parser.add_argument("--sin2theta-min", type=float, default=0.150,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 	parser.add_argument("--sin2theta-delta", type=float, default=0.0025,
 	                    help="Sin^2 theta_W step size for scan. [Default: %(default)s]")
 	
-	parser.add_argument("-o", "--output", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/calibrationcurve.root",
+	parser.add_argument("-o", "--output", default="$CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/data/calibration_curve.root",
 	                    help="Output *.root file. [Default: %(default)s]")
 	
 	args = parser.parse_args()
