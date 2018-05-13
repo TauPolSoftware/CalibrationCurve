@@ -3,6 +3,7 @@
 
 import argparse
 import numpy
+import os
 
 import TauPolSoftware.CalibrationCurve.getcalibrationcurve as getcalibrationcurve
 
@@ -42,6 +43,8 @@ if __name__ == "__main__":
 	                    help="Max. sin^2 theta_W value for scan. [Default: %(default)s]")
 	parser.add_argument("--sin2theta-delta", type=float, default=0.0025,
 	                    help="Sin^2 theta_W step size for scan. [Default: %(default)s]")
+	parser.add_argument("--sin2theta-mc", type=float, default=0.231295,
+	                    help="Sin^2 theta_W value implemented in the MC sample. [Default: %(default)s]")
 	
 	parser.add_argument("-o", "--outputs", nargs="+",
 	                    default=default_outputs,
@@ -49,7 +52,6 @@ if __name__ == "__main__":
 	
 	args = parser.parse_args()
 	
-	sin2theta_values = list(numpy.arange(args.sin2theta_min, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta))
 	sin2theta_edges = list(numpy.arange(args.sin2theta_min-0.5*args.sin2theta_delta, args.sin2theta_max+args.sin2theta_delta, args.sin2theta_delta))
 	
 	for energy_distribution_up, energy_distribution_down, output_path in zip(
@@ -57,12 +59,12 @@ if __name__ == "__main__":
 		args.energy_distributions_down,
 		args.outputs
 	):
-		getcalibrationcurve.get_calibration_curve(
+		calibration_curve = getcalibrationcurve.CalibrationCurve(
 				args.zfitter_output,
 				energy_distribution_up,
 				energy_distribution_down,
-				sin2theta_values,
 				sin2theta_edges,
-				output_path
+				args.sin2theta_mc
 		)
+		calibration_curve.save_calibration_curves(output_path)
 
