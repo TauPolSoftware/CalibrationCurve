@@ -25,9 +25,7 @@ class CalibrationCurve(object):
 		self.energy_histogram_up = self._get_histogram(energy_histogram_up_path)
 		self.energy_histogram_down = self._get_histogram(energy_histogram_down_path)
 	
-		print sin2theta_edges
 		sin2theta_mc_edges = [max([edge for edge in sin2theta_edges if edge < sin2theta_mc]), min([edge for edge in sin2theta_edges if edge > sin2theta_mc])]
-		print sin2theta_mc_edges
 		self.xsec_mc_histogram_up = self._get_zfitter_output_histogram(sin2theta_mc_edges[0], sin2theta_mc_edges[1], "up", "xsec")
 		self.xsec_mc_histogram_down = self._get_zfitter_output_histogram(sin2theta_mc_edges[0], sin2theta_mc_edges[1], "down", "xsec")
 	
@@ -121,10 +119,10 @@ class CalibrationCurve(object):
 		xsec_histogram_up = self._get_zfitter_output_histogram(sin2theta_min, sin2theta_max, "up", "xsec")
 		xsec_histogram_down = self._get_zfitter_output_histogram(sin2theta_min, sin2theta_max, "down", "xsec")
 		
-		xsec_histogram_up.Multiply(self.energy_histogram_up)
 		xsec_histogram_up.Divide(self.xsec_mc_histogram_up)
-		xsec_histogram_down.Multiply(self.energy_histogram_down)
+		xsec_histogram_up.Multiply(self.energy_histogram_up)
 		xsec_histogram_down.Divide(self.xsec_mc_histogram_down)
+		xsec_histogram_down.Multiply(self.energy_histogram_down)
 		
 		polarisation_histogram_up.Multiply(xsec_histogram_up)
 		polarisation_histogram_down.Multiply(xsec_histogram_down)
@@ -133,7 +131,7 @@ class CalibrationCurve(object):
 		integral_polarisation_energy_xsec_down = polarisation_histogram_down.Integral()
 	
 		integral_energy_xsec_up = xsec_histogram_up.Integral()
-		integral_energy_xsec_down = xsec_histogram_up.Integral()
+		integral_energy_xsec_down = xsec_histogram_down.Integral()
 	
 		numerator = (integral_polarisation_energy_xsec_up + integral_polarisation_energy_xsec_down)
 		denominator = (integral_energy_xsec_up + integral_energy_xsec_down)
