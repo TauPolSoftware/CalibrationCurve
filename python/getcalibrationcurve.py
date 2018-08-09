@@ -18,12 +18,12 @@ import TauPolSoftware.CalibrationCurve.uncertainties.uncertainties as uncertaint
 
 class CalibrationCurve(object):
 
-	def __init__(self, zfitter_output_path, energy_histogram_up_path, energy_histogram_down_path, sin2theta_edges, sin2theta_mc):
+	def __init__(self, zfitter_output_path, energy_histogram_up_paths, energy_histogram_down_paths, sin2theta_edges, sin2theta_mc):
 		self.zfitter_output_path = zfitter_output_path
 		self.sin2theta_edges = sin2theta_edges
 	
-		self.energy_histogram_up = self._get_histogram(energy_histogram_up_path)
-		self.energy_histogram_down = self._get_histogram(energy_histogram_down_path)
+		self.energy_histogram_up = self._get_histograms(energy_histogram_up_paths)
+		self.energy_histogram_down = self._get_histograms(energy_histogram_down_paths)
 	
 		sin2theta_mc_edges = [max([edge for edge in sin2theta_edges if edge < sin2theta_mc]), min([edge for edge in sin2theta_edges if edge > sin2theta_mc])]
 		self.xsec_mc_histogram_up = self._get_zfitter_output_histogram(sin2theta_mc_edges[0], sin2theta_mc_edges[1], "up", "xsec")
@@ -72,6 +72,8 @@ class CalibrationCurve(object):
 		output_file_path, root_directory = output_path.split(":")
 		output_file = ROOT.TFile(output_file_path, "UPDATE")
 	
+		tools.write_object(output_file, self.energy_histogram_up, os.path.join(root_directory, "energy_distribution_up"))
+		tools.write_object(output_file, self.energy_histogram_down, os.path.join(root_directory, "energy_distribution_down"))
 		tools.write_object(output_file, graph_sin2theta_vs_pol, os.path.join(root_directory, "sin2theta_vs_pol"))
 		tools.write_object(output_file, graph_pol_vs_sin2theta, os.path.join(root_directory, "pol_vs_sin2theta"))
 		tools.write_object(output_file, graph_sin2theta_vs_pol_plus_sigma, os.path.join(root_directory, "sin2theta_vs_pol_plus_sigma"))
@@ -87,6 +89,15 @@ class CalibrationCurve(object):
 		histogram = input_file.Get(histogram_path)
 		histogram.SetDirectory(0)
 		input_file.Close()
+		return histogram
+
+	def _get_histograms(self, paths):
+		histogram = None
+		for path in paths:
+			if histogram is None:
+				histogram = self._get_histogram(path)
+			else:
+				histogram.Add(self._get_histogram(path))
 		return histogram
 
 	def _get_zfitter_output_histogram(self, sin2theta_min, sin2theta_max, quark_type, quantity):

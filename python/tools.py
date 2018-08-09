@@ -2,11 +2,13 @@
 
 import array
 import multiprocessing
+import os
 import time
 
 import ROOT
 
 import TauPolSoftware.CalibrationCurve.progressiterator as pi
+import TauPolSoftware.CalibrationCurve.tfilecontextmanager as tfilecontextmanager
 
 
 def parallelize(function, arguments_list, n_processes=1, description=None):
@@ -59,4 +61,23 @@ def write_object(root_file, root_object, path):
 		root_directory.cd()
 	root_object.Write(path.split("/")[-1], ROOT.TObject.kWriteDelete)
 	root_file.cd()
+
+
+def walk_root_directory(root_directory, path=""):
+	def _walk_root_directory(root_directory, path=""):
+		elements = []
+		for key in root_directory.GetListOfKeys():
+			if key.GetClassName().startswith("TDirectory"):
+				elements.extend(_walk_root_directory(root_directory.Get(key.GetName()), os.path.join(path, key.GetName())))
+			else:
+				elements.append((key, os.path.join(path, key.GetName())))
+		return elements
+	
+	elements = None
+	if isinstance(root_directory, str):
+		with tfilecontextmanager.TFileContextManager(root_directory, "READ") as root_file:
+			elements = _walk_root_directory(root_file, path)
+	else:
+		elements = _walk_root_directory(root_directory, path)
+	return elements
 
