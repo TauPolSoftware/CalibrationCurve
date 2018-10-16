@@ -4,8 +4,6 @@ double hc = 0.38937966E+06; // GeV to nb
 double mz = 91.188;
 double gz = 2.441404;
 
-double vtau =  -3.68999999999999884e-02;
-double atau =  -0.5;
 double au   =  0.5;
 double ad   =   -0.5;
 
@@ -127,6 +125,11 @@ Double_t F0(double q, double s2w, string type){
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
 
+
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
+
+
   double vf;
   double af;
   double qf;
@@ -151,6 +154,7 @@ Double_t F0(double q, double s2w, string type){
       vf = vtau;
       qf = qtau;
     }
+
   return hc*(pi*alpha*alpha/4/s)*(qtau*qtau*qf*qf + 2*chi.Re()*qtau*qf*vf*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vf*vf + af*af));
 }
 
@@ -159,6 +163,10 @@ Double_t F1(double q, double s2w, string type){
   double sinwcosw4 = 4*s2w*(1. - s2w);
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
+
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
+
 
   double vf;
   double af;
@@ -192,6 +200,10 @@ Double_t F2(double q, double s2w, string type){
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
 
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
+
+
   double vf;
   double af;
   double qf;
@@ -221,6 +233,10 @@ Double_t F3(double q, double s2w, string type){
   double sinwcosw4 = 4*s2w*(1. - s2w);
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
+
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
+
 
   double vf;
   double af;
@@ -258,6 +274,11 @@ Double_t pol_average(double q, double s2w, string type){
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
 
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
+
+
+
   double vup=au -2*qu*s2w;
   double aup=au;
   double qup=qu;
@@ -294,6 +315,9 @@ Double_t xsec_average(double q, double s2w, string type){
   double sinwcosw4 = 4*s2w*(1. - s2w);
   TComplex chidenom(s-mz*mz,s*gz/mz);
   TComplex chi = (s/sinwcosw4)/chidenom;
+
+  double atau =  -0.5;
+  double vtau =  atau -2*qtau*s2w;
 
 
   double vup=au -2*qu*s2w;
