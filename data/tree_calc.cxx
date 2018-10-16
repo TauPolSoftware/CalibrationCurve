@@ -31,6 +31,10 @@ void tree_calc(){
   double xsec_ele;
   double pol_ele;
 
+  double xsec_ave;
+  double pol_ave;
+
+
 
   TFile *file = new TFile("tree_calc.root","RECREATE");
   TTree *tree_up= new TTree("tree_up","tree_up");
@@ -55,9 +59,18 @@ void tree_calc(){
   tree_ele->Branch("sin2theta",&sin2theta);
 
 
+  TTree *tree_ave= new TTree("tree_ave","tree_ave");
+  
+  tree_ave->Branch("energy",&energy);
+  tree_ave->Branch("xsec",&xsec_ave);
+  tree_ave->Branch("pol",&pol_ave);
+  tree_ave->Branch("sin2theta",&sin2theta);
+
+
   auto profile_up = new TProfile2D("up_pol_vs_sin2theta_vs_energy","up_pol_vs_sin2theta_vs_energy",100,50,200,100,0.15,0.3,-1,1);
   auto profile_down = new TProfile2D("down_pol_vs_sin2theta_vs_energy","down_pol_vs_sin2theta_vs_energy",100,50,200,100,0.15,0.3,-1,1);
   auto profile_ele = new TProfile2D("ele_pol_vs_sin2theta_vs_energy","ele_pol_vs_sin2theta_vs_energy",100,50,200,100,0.15,0.3,-1,1);
+  auto profile_ave = new TProfile2D("ave_pol_vs_sin2theta_vs_energy","ave_pol_vs_sin2theta_vs_energy",100,50,200,100,0.15,0.3,-1,1);
 
   double q_min=50.;
   double q_max=200.;
@@ -86,18 +99,22 @@ void tree_calc(){
 	  xsec_up = totalXsec(qi, s2wj,"up");
 	  xsec_down = totalXsec(qi, s2wj,"down");
 	  xsec_ele = totalXsec(qi, s2wj,"ele");
+	  xsec_ave = xsec_average(qi, s2wj,"ave");
 	  pol_up=Pol(qi, s2wj,"up");
 	  pol_down=Pol(qi,s2wj,"down");
 	  pol_ele=Pol(qi,s2wj,"ele");
+	  pol_ave=pol_average(qi,s2wj,"ave");
 
 	  energy = qi;
 	  sin2theta = s2wj;
 	  profile_up->Fill(energy,sin2theta,pol_up,1);
 	  profile_down->Fill(energy,sin2theta,pol_down,1);
 	  profile_ele->Fill(energy,sin2theta,pol_ele,1);
+	  profile_ave->Fill(energy,sin2theta,pol_ave,1);
 	  tree_up->Fill();
 	  tree_down->Fill();
 	  tree_ele->Fill();
+	  tree_ave->Fill();
 	}
     }
   file->Write();
@@ -134,7 +151,7 @@ Double_t F0(double q, double s2w, string type){
       vf = vtau;
       qf = qtau;
     }
-  return hc*(pi*alpha**2/4/s)*(qtau*qtau*qf*qf + 2*chi.Re()*qtau*qf*vf*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vf*vf + af*af));
+  return hc*(pi*alpha*alpha/4/s)*(qtau*qtau*qf*qf + 2*chi.Re()*qtau*qf*vf*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vf*vf + af*af));
 }
 
 Double_t F1(double q, double s2w, string type){
@@ -166,7 +183,7 @@ Double_t F1(double q, double s2w, string type){
       qf = qtau;
     }
 
-  return hc*(pi*alpha**2/4/s)*( 2*chi.Re()*qtau*qf*af*atau/**sinwcosw4*/ + chi.Rho2()*2*vtau*atau*2*vf*af);
+  return hc*(pi*alpha*alpha/4/s)*( 2*chi.Re()*qtau*qf*af*atau/**sinwcosw4*/ + chi.Rho2()*2*vtau*atau*2*vf*af);
 }
 
 Double_t F2(double q, double s2w, string type){
@@ -196,7 +213,7 @@ Double_t F2(double q, double s2w, string type){
       vf = vtau;
       qf = qtau;
     }
-  return hc*(pi*alpha**2/4/s)*( 2*chi.Re()*qtau*qf*vf*atau + chi.Rho2()*2*vtau*atau*(vf*vf+af*af));
+  return hc*(pi*alpha*alpha/4/s)*( 2*chi.Re()*qtau*qf*vf*atau + chi.Rho2()*2*vtau*atau*(vf*vf+af*af));
 }
 
 Double_t F3(double q, double s2w, string type){
@@ -226,10 +243,77 @@ Double_t F3(double q, double s2w, string type){
       vf = vtau;
       qf = qtau;
     }
-  return hc*(pi*alpha**2/4/s)*( 2*chi.Re()*qtau*qf*af*vtau + chi.Rho2()*2*vf*af*(vtau*vtau + atau*atau));
+  return hc*(pi*alpha*alpha/4/s)*( 2*chi.Re()*qtau*qf*af*vtau + chi.Rho2()*2*vf*af*(vtau*vtau + atau*atau));
 }
 
 Double_t totalXsec(double q, double s2w, string type){    return 16*F0(q,s2w,type)/3; }
 Double_t Pol(double q, double s2w, string type){    return -F2(q,s2w,type)/F0(q,s2w,type); }
 
 
+
+Double_t pol_average(double q, double s2w, string type){
+
+  double s = q*q;
+  double sinwcosw4 = 4*s2w*(1. - s2w);
+  TComplex chidenom(s-mz*mz,s*gz/mz);
+  TComplex chi = (s/sinwcosw4)/chidenom;
+
+  double vup=au -2*qu*s2w;
+  double aup=au;
+  double qup=qu;
+
+
+  double vdown=ad -2*qd*s2w;
+  double adown=ad;
+  double qdown=qd;
+
+
+
+  double umix=0.468028; // from madgraph
+
+
+  //return hc*(pi*alpha*alpha/4/s)*2*chi.Re()*qtau*qf*af*atau;
+  //return  hc*(pi*alpha*alpha/4/s)*chi.Rho2()*2*vtau*atau*2*vf*af;
+
+  double F0u = (qtau*qtau*qup*qup+  2*chi.Re()*qtau*qup*vup*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vup*vup + aup*aup));
+  double F2u = ( 2*chi.Re()*qtau*qup*vup*atau + chi.Rho2()*2*vtau*atau*(vup*vup+aup*aup));
+
+  double F0d = (qtau*qtau*qdown*qdown+  2*chi.Re()*qtau*qdown*vdown*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vdown*vdown + adown*adown));
+  double F2d = ( 2*chi.Re()*qtau*qdown*vdown*atau + chi.Rho2()*2*vtau*atau*(vdown*vdown+adown*adown));
+
+  double Faver = -100*(F2u*umix + F2d*(1-umix))/(F0u*umix + F0d*(1-umix));
+  
+  return Faver;
+  
+}
+
+Double_t xsec_average(double q, double s2w, string type){
+
+
+  double s = q*q;
+  double sinwcosw4 = 4*s2w*(1. - s2w);
+  TComplex chidenom(s-mz*mz,s*gz/mz);
+  TComplex chi = (s/sinwcosw4)/chidenom;
+
+
+  double vup=au -2*qu*s2w;
+  double aup=au;
+  double qup=qu;
+
+
+  double vdown=ad -2*qd*s2w;
+  double adown=ad;
+  double qdown=qd;
+
+
+
+
+
+  double umix=0.468028; // from madgraph
+
+
+  double F0u = (qtau*qtau*qup*qup+  2*chi.Re()*qtau*qup*vup*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vup*vup + aup*aup));
+  double F0d = (qtau*qtau*qdown*qdown+  2*chi.Re()*qtau*qdown*vdown*vtau + chi.Rho2()*(vtau*vtau+atau*atau)*(vdown*vdown + adown*adown));
+  //  std::cout<<"  "<< 16*hc*(pi*alpha*alpha/4/s)*(umix*F0u + (1-umix)*F0d)/3 <<std::endl;
+  return 16*hc*(pi*alpha*alpha/4/s)*(umix*F0u + (1-umix)*F0d)/3;
+ }
