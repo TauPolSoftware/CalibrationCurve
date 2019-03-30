@@ -48,7 +48,7 @@ def get_zfitter_executable(arguments):
 		zfusr_file.write(zfusr_code)
 	
 	# compile ZFitter
-	os.system(os.path.expandvars("cd $CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter && g77 -g -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore -fugly-logint -ftypeless-boz *.f -o {executable}".format(executable=executable)))
+	os.system(os.path.expandvars("cd $CMSSW_BASE/src/TauPolSoftware/CalibrationCurve/zFitter && gfortran -g -fno-automatic -fdollar-ok -fno-backslash -finit-local-zero -fno-second-underscore *.f -o {executable}".format(executable=executable))) # g77 -fugly-logint -ftypeless-boz
 	
 	return [executable, quark_type, sin2theta_value, sin2theta_label]
 
@@ -85,16 +85,17 @@ def collect_zfitter_outputs(zfitter_outputs, args):
 		output_tree.SetName("zfitter_{quark_type}".format(quark_type=quark_type.replace("D", "down").replace("U", "up")))
 		for zfitter_output in tmp_zfitter_outputs:
 			output_tree.ReadFile(zfitter_output, "energy:xsec:pol:sin2theta")
+#			print "rm -r {zfitter_output}".format(zfitter_output=os.path.dirname(zfitter_output))
 			os.system("rm -r {zfitter_output}".format(zfitter_output=os.path.dirname(zfitter_output)))
 		tools.write_object(output_file, output_tree, output_tree.GetName())
 		
 		# fill histogram
 		output_tree.Draw("pol:sin2theta:energy>>{tree_name}_pol_vs_sin2theta_vs_energy({energy_bins},{energy_low},{energy_high},{sin2theta_bins},{sin2theta_low},{sin2theta_high})".format(
 				tree_name = output_tree.GetName(),
-				energy_bins = len(energy_values),
+				energy_bins = (args.energy_max-args.energy_min)/args.energy_delta+1,
 				energy_low = (args.energy_min - (args.energy_delta/2.0)),
 				energy_high = (args.energy_max + (args.energy_delta/2.0)),
-				sin2theta_bins = len(sin2theta_values),
+				sin2theta_bins = (args.sin2theta_max-args.sin2theta_min)/args.sin2theta_delta+1,
 				sin2theta_low = (args.sin2theta_min - (args.sin2theta_delta/2.0)),
 				sin2theta_high = (args.sin2theta_max + (args.sin2theta_delta/2.0))
 		), "", "prof goff")

@@ -11,7 +11,7 @@ import TauPolSoftware.CalibrationCurve.runzfitter as runzfitter
 
 if __name__ == "__main__":
 	
-	parser = argparse.ArgumentParser(description="Run (modified) ZFitter. Obtaining P(sqrt s) and sigma(sqrt s) from ZFitter for different sin^2 theta_W and setting range and steps of energy for which the values should be calculated.")
+	parser = argparse.ArgumentParser(description="Run (modified) ZFitter. Obtaining P(sqrt s) and sigma(sqrt s) from ZFitter for different sin^2 theta_W and setting range and steps of energy for which the values should be calculated. See also http://cds.cern.ch/record/265101/files/9412201.pdf")
 	
 	parser.add_argument("--sin2theta-min", type=float, default=0.20,
 	                    help="Min. sin^2 theta_W value for scan. [Default: %(default)s]")
