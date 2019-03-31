@@ -1,8 +1,10 @@
 
 #!/usr/bin/env python
 
+import copy
 import datetime
 import hashlib
+import math
 import numpy
 import os
 
@@ -30,11 +32,9 @@ class CalibrationCurve(object):
 		self.xsec_mc_histogram_down = self._get_zfitter_output_histogram(sin2theta_mc_edges[0], sin2theta_mc_edges[1], "down", "xsec")
 	
 		calibration_central_values = self._get_calibration_central_values()
-	
-		# no uncertainties implemented yet
-		self.final_calibration = {uncertainties.ufloat(sin2theta, 0.0) : uncertainties.ufloat(polarisation, 0.0) for sin2theta, polarisation in calibration_central_values}
+		self.final_calibration = {sin2theta : polarisation for sin2theta, polarisation in calibration_central_values}
 
-	def save_calibration_curves(self, output_path):
+	def save_calibration_curves(self, output_path, file_option="UPDATE"):
 		sorted_keys = sorted(self.final_calibration.keys(), key=lambda sin2theta: sin2theta.nominal_value)
 		n_points = len(self.final_calibration)
 	
@@ -70,7 +70,7 @@ class CalibrationCurve(object):
 		graph_sin2theta_vs_pol.GetYaxis().SetTitle("average polarisation -1#sigma")
 	
 		output_file_path, root_directory = output_path.split(":")
-		output_file = ROOT.TFile(output_file_path, "UPDATE")
+		output_file = ROOT.TFile(output_file_path, file_option)
 	
 		tools.write_object(output_file, self.energy_histogram_up, os.path.join(root_directory, "energy_distribution_up"))
 		tools.write_object(output_file, self.energy_histogram_down, os.path.join(root_directory, "energy_distribution_down"))
@@ -121,7 +121,7 @@ class CalibrationCurve(object):
 		calibration_central_values = []
 		for sin2theta_min, sin2theta_max in zip(self.sin2theta_edges[:-1], self.sin2theta_edges[1:]):
 			sin2theta_value = float((sin2theta_min + sin2theta_max) / 2.0)
-			calibration_central_values.append((sin2theta_value, self._calculate_polarisation(sin2theta_min, sin2theta_max)))
+			calibration_central_values.append((uncertainties.ufloat(sin2theta_value, 0.0), self._calculate_polarisation(sin2theta_min, sin2theta_max)))
 		return calibration_central_values
 
 	def _calculate_polarisation(self, sin2theta_min, sin2theta_max):
@@ -138,11 +138,21 @@ class CalibrationCurve(object):
 		polarisation_histogram_up.Multiply(xsec_histogram_up)
 		polarisation_histogram_down.Multiply(xsec_histogram_down)
 	
+		integral_polarisation_energy_xsec_up_error = ROOT.Double(0.0)
 		integral_polarisation_energy_xsec_up = polarisation_histogram_up.Integral()
+		integral_polarisation_energy_xsec_up = uncertainties.ufloat(integral_polarisation_energy_xsec_up, integral_polarisation_energy_xsec_up_error)
+		
+		integral_polarisation_energy_xsec_down_error = ROOT.Double(0.0)
 		integral_polarisation_energy_xsec_down = polarisation_histogram_down.Integral()
+		integral_polarisation_energy_xsec_down = uncertainties.ufloat(integral_polarisation_energy_xsec_down, integral_polarisation_energy_xsec_down_error)
 	
+		integral_energy_xsec_up_error = ROOT.Double(0.0)
 		integral_energy_xsec_up = xsec_histogram_up.Integral()
+		integral_energy_xsec_up = uncertainties.ufloat(integral_energy_xsec_up, integral_energy_xsec_up_error)
+		
+		integral_energy_xsec_down_error = ROOT.Double(0.0)
 		integral_energy_xsec_down = xsec_histogram_down.Integral()
+		integral_energy_xsec_down = uncertainties.ufloat(integral_energy_xsec_down, integral_energy_xsec_down_error)
 	
 		numerator = (integral_polarisation_energy_xsec_up + integral_polarisation_energy_xsec_down)
 		denominator = (integral_energy_xsec_up + integral_energy_xsec_down)
@@ -150,4 +160,29 @@ class CalibrationCurve(object):
 		if denominator != 0.0:
 			polarisation = numerator / denominator
 		return polarisation
+
+
+def combine_uncertainties(nominal, shifts_up, shifts_down):
+	combination = copy.deepcopy(nominal)
+	
+	for sin2theta_nominal, polarisation_nominal in nominal.final_calibration.iteritems():
+		squared_shift_up = pow(polarisation_nominal.std_dev, 2)
+		for shift in shifts_up:
+			polarisation_shift = shift.final_calibration[sorted(shift.final_calibration.keys(), key=lambda sin2theta: abs(sin2theta-sin2theta_nominal))[0]]
+			squared_shift_up += pow(polarisation_shift-polarisation_nominal, 2)
+				
+		squared_shift_down = pow(polarisation_nominal.std_dev, 2)
+		for shift in shifts_down:
+			polarisation_shift = shift.final_calibration[sorted(shift.final_calibration.keys(), key=lambda sin2theta: abs(sin2theta-sin2theta_nominal))[0]]
+			squared_shift_down += pow(polarisation_shift-polarisation_nominal, 2)
+	
+		# take larges shift
+		sigma = math.sqrt(max(squared_shift_up.nominal_value, squared_shift_down.nominal_value))
+		
+		combined_sin2theta = sorted(combination.final_calibration.keys(), key=lambda sin2theta: abs(sin2theta-sin2theta_nominal))[0]
+		combined_polarisation = combination.final_calibration[combined_sin2theta]
+		combined_polarisation = uncertainties.ufloat(combined_polarisation.nominal_value, sigma)
+		combination.final_calibration[combined_sin2theta] = combined_polarisation
+
+	return combination
 
