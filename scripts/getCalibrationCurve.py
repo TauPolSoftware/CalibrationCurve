@@ -28,7 +28,7 @@ if __name__ == "__main__":
 	                    help="Max. sin^2 theta_W value for scan. [Default: %(default)s]")
 	parser.add_argument("--sin2theta-delta", type=float, default=0.0025,
 	                    help="Sin^2 theta_W step size for scan. [Default: %(default)s]")
-	parser.add_argument("--sin2theta-mc", type=float, default=0.2280,
+	parser.add_argument("--sin2theta-mc", type=float, default=0.229043375, # corresponding to <P_tau> = -0.167653
 	                    help="Sin^2 theta_W value implemented in the MC sample. [Default: %(default)s]")
 	
 	parser.add_argument("-o", "--output-file",
