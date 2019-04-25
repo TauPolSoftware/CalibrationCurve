@@ -1,0 +1,172 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5297,        164]
+NotebookOptionsPosition[      4477,        142]
+NotebookOutlinePosition[      4813,        157]
+CellTagsIndexPosition[      4770,        154]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AvPtau", "[", "Sin2Theta_", "]"}], ":=", 
+  RowBox[{
+   RowBox[{"Sum", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Ptau", "[", 
+       RowBox[{"Sin2Theta", ",", "Q", ",", "Mqq"}], "]"}], 
+      RowBox[{"W", "[", 
+       RowBox[{"Q", ",", "Mqq"}], "]"}]}], ",", "Q", ",", "Mqq"}], "]"}], "/", 
+   RowBox[{"Sum", "[", 
+    RowBox[{
+     RowBox[{"W", "[", 
+      RowBox[{"Q", ",", "Mqq"}], "]"}], ",", "Q", ",", "Mqq"}], 
+    "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.763100976862811*^9, 3.763101080663672*^9}, {
+  3.763101117382535*^9, 3.763101175384387*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"a037b61a-c218-407d-9abd-013c11ad5237"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"AvPtau", "[", "Sin2Theta", "]"}]], "Input",
+ CellChangeTimes->{{3.763101197727865*^9, 3.7631011987197*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"3a101626-08c3-43fe-9f12-2f307a580383"],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{
+   UnderscriptBox["\[Sum]", "Q"], 
+   RowBox[{
+    UnderscriptBox["\[Sum]", "Mqq"], 
+    RowBox[{
+     RowBox[{"Ptau", "[", 
+      RowBox[{"Sin2Theta", ",", "Q", ",", "Mqq"}], "]"}], " ", 
+     RowBox[{"W", "[", 
+      RowBox[{"Q", ",", "Mqq"}], "]"}]}]}]}], 
+  RowBox[{
+   UnderscriptBox["\[Sum]", "Q"], 
+   RowBox[{
+    UnderscriptBox["\[Sum]", "Mqq"], 
+    RowBox[{"W", "[", 
+     RowBox[{"Q", ",", "Mqq"}], "]"}]}]}]]], "Output",
+ CellChangeTimes->{3.7631012001717873`*^9},
+ CellLabel->"Out[2]=",ExpressionUUID->"06a9a59c-344a-4be8-b8e5-476b36588619"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SigmaAvPtau", "[", "Sin2Theta_", "]"}], ":=", 
+  RowBox[{"Sum", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"D", "[", 
+       RowBox[{
+        RowBox[{"AvPtau", "[", "Sin2Theta", "]"}], ",", 
+        RowBox[{"W", "[", 
+         RowBox[{"Q", ",", "Mqq"}], "]"}]}], "]"}], "^", "2"}], "*", 
+     RowBox[{"SigmaW", "[", 
+      RowBox[{"Q", ",", "Mqq"}], "]"}]}], ",", "Q", ",", "Mqq"}], 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.763101250648426*^9, 3.763101291560473*^9}, {
+  3.763101332366139*^9, 3.763101384772764*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"0b435b90-12d6-46cd-94b7-14f3e7ad175d"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"SigmaAvPtau", "[", "Sin2Theta", "]"}]], "Input",
+ CellChangeTimes->{3.763101394871978*^9},
+ CellLabel->"In[4]:=",ExpressionUUID->"14f985d1-9bac-494b-b8a6-25668e563427"],
+
+Cell[BoxData[
+ RowBox[{
+  UnderscriptBox["\[Sum]", "Q"], 
+  RowBox[{
+   UnderscriptBox["\[Sum]", "Mqq"], 
+   RowBox[{
+    RowBox[{"SigmaW", "[", 
+     RowBox[{"Q", ",", "Mqq"}], "]"}], " ", 
+    SuperscriptBox[
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         UnderscriptBox["\[Sum]", "Q"], 
+         RowBox[{
+          UnderscriptBox["\[Sum]", "Mqq"], 
+          RowBox[{"Ptau", "[", 
+           RowBox[{"Sin2Theta", ",", "Q", ",", "Mqq"}], "]"}]}]}], 
+        RowBox[{
+         UnderscriptBox["\[Sum]", "Q"], 
+         RowBox[{
+          UnderscriptBox["\[Sum]", "Mqq"], 
+          RowBox[{"W", "[", 
+           RowBox[{"Q", ",", "Mqq"}], "]"}]}]}]], "-", 
+       FractionBox[
+        RowBox[{"Mqq", " ", "Q", " ", 
+         RowBox[{
+          UnderscriptBox["\[Sum]", "Q"], 
+          RowBox[{
+           UnderscriptBox["\[Sum]", "Mqq"], 
+           RowBox[{
+            RowBox[{"Ptau", "[", 
+             RowBox[{"Sin2Theta", ",", "Q", ",", "Mqq"}], "]"}], " ", 
+            RowBox[{"W", "[", 
+             RowBox[{"Q", ",", "Mqq"}], "]"}]}]}]}]}], 
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{
+           UnderscriptBox["\[Sum]", "Q"], 
+           RowBox[{
+            UnderscriptBox["\[Sum]", "Mqq"], 
+            RowBox[{"W", "[", 
+             RowBox[{"Q", ",", "Mqq"}], "]"}]}]}], ")"}], "2"]]}], ")"}], 
+     "2"]}]}]}]], "Output",
+ CellChangeTimes->{3.763101395312954*^9},
+ CellLabel->"Out[4]=",ExpressionUUID->"9a4751e7-8d8f-42c9-88ab-4c884dce2497"]
+}, Open  ]]
+},
+WindowSize->{808, 911},
+WindowMargins->{{501, Automatic}, {108, Automatic}},
+FrontEndVersion->"11.3 for Linux x86 (64-bit) (March 6, 2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 675, 18, 55, "Input",ExpressionUUID->"a037b61a-c218-407d-9abd-013c11ad5237"],
+Cell[CellGroupData[{
+Cell[1258, 42, 209, 3, 31, "Input",ExpressionUUID->"3a101626-08c3-43fe-9f12-2f307a580383"],
+Cell[1470, 47, 594, 18, 61, "Output",ExpressionUUID->"06a9a59c-344a-4be8-b8e5-476b36588619"]
+}, Open  ]],
+Cell[2079, 68, 649, 17, 55, "Input",ExpressionUUID->"0b435b90-12d6-46cd-94b7-14f3e7ad175d"],
+Cell[CellGroupData[{
+Cell[2753, 89, 192, 3, 31, "Input",ExpressionUUID->"14f985d1-9bac-494b-b8a6-25668e563427"],
+Cell[2948, 94, 1513, 45, 112, "Output",ExpressionUUID->"9a4751e7-8d8f-42c9-88ab-4c884dce2497"]
+}, Open  ]]
+}
+]
+*)
+
