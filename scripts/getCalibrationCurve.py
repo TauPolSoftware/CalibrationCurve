@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import copy
 import numpy
 import os
 
@@ -46,9 +47,11 @@ if __name__ == "__main__":
 	elements = list(zip(*tools.walk_root_directory(args.energy_distributions_file))[-1])
 	
 	categories = sorted(list(set([element.split("/")[0] for element in elements])))
+	categories_to_combine = [category for category in copy.deepcopy(categories) if (not "gen" in category)]
 	# quark_types = sorted(list(set([element.split("/")[1] for element in elements])))
 	systematics = sorted(list(set([element.split("/")[2].replace("_up", "").replace("_down", "") for element in elements if not "nominal" in element])))
 	print "Found categories:", categories
+	print "Categories to be combined:", categories_to_combine
 	# print "Found quark types:", quark_types
 	print "Found systematics:", systematics
 	
@@ -58,7 +61,7 @@ if __name__ == "__main__":
 	file_option = "RECREATE"
 	for index_systematic, systematic in enumerate(["nominal"]+systematics):
 		for systematic_shift in ([""] if index_systematic == 0 else ["_up", "_down"]):
-			for index_category, tmp_categories in enumerate([categories]+[[category] for category in categories]):
+			for index_category, tmp_categories in enumerate([categories_to_combine]+[[category] for category in categories]):
 				energy_distributions_up = [args.energy_distributions_file+":"+os.path.join(category, "up", systematic+systematic_shift) for category in tmp_categories]
 				energy_distributions_down = [args.energy_distributions_file+":"+os.path.join(category, "down", systematic+systematic_shift) for category in tmp_categories]
 				output_directory = args.output_file+":"+os.path.join("combined" if index_category == 0 else category, systematic+systematic_shift)
