@@ -99,6 +99,26 @@ def collect_zfitter_outputs(zfitter_outputs, args):
 				sin2theta_low = (args.sin2theta_min - (args.sin2theta_delta/2.0)),
 				sin2theta_high = (args.sin2theta_max + (args.sin2theta_delta/2.0))
 		), "", "prof goff")
+		
+		output_tree.Draw("xsec*(1+pol)/2:sin2theta:energy>>{tree_name}_pospol_xsec_vs_sin2theta_vs_energy({energy_bins},{energy_low},{energy_high},{sin2theta_bins},{sin2theta_low},{sin2theta_high})".format(
+				tree_name = output_tree.GetName(),
+				energy_bins = (args.energy_max-args.energy_min)/args.energy_delta+1,
+				energy_low = (args.energy_min - (args.energy_delta/2.0)),
+				energy_high = (args.energy_max + (args.energy_delta/2.0)),
+				sin2theta_bins = (args.sin2theta_max-args.sin2theta_min)/args.sin2theta_delta+1,
+				sin2theta_low = (args.sin2theta_min - (args.sin2theta_delta/2.0)),
+				sin2theta_high = (args.sin2theta_max + (args.sin2theta_delta/2.0))
+		), "", "prof goff")
+		
+		output_tree.Draw("xsec*(1-pol)/2:sin2theta:energy>>{tree_name}_negpol_xsec_vs_sin2theta_vs_energy({energy_bins},{energy_low},{energy_high},{sin2theta_bins},{sin2theta_low},{sin2theta_high})".format(
+				tree_name = output_tree.GetName(),
+				energy_bins = (args.energy_max-args.energy_min)/args.energy_delta+1,
+				energy_low = (args.energy_min - (args.energy_delta/2.0)),
+				energy_high = (args.energy_max + (args.energy_delta/2.0)),
+				sin2theta_bins = (args.sin2theta_max-args.sin2theta_min)/args.sin2theta_delta+1,
+				sin2theta_low = (args.sin2theta_min - (args.sin2theta_delta/2.0)),
+				sin2theta_high = (args.sin2theta_max + (args.sin2theta_delta/2.0))
+		), "", "prof goff")
 	
 	output_file.Write()
 	output_file.Close()
