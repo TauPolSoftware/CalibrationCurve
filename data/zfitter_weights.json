@@ -1,0 +1,106 @@
+{
+    "analysis_modules": [
+        "Divide"
+    ], 
+    "divide_denominator_nicks": [
+        "pospol_downquark_madgraph", 
+        "negpol_downquark_madgraph", 
+        "pospol_upquark_madgraph", 
+        "negpol_upquark_madgraph"
+    ], 
+    "divide_numerator_nicks": [
+        "pospol_downquark", 
+        "negpol_downquark", 
+        "pospol_upquark", 
+        "negpol_upquark"
+    ], 
+    "divide_result_nicks": [
+        "weight_pospol_downquark", 
+        "weight_negpol_downquark", 
+        "weight_pospol_upquark", 
+        "weight_negpol_upquark"
+    ], 
+    "filename": "zfitter_weights", 
+    "files": [
+        "TauPolSoftware/CalibrationCurve/data/zfitter.root"
+    ], 
+    "folders": [
+        "zfitter_down", 
+        "zfitter_down", 
+        "zfitter_down", 
+        "zfitter_down", 
+        "zfitter_up", 
+        "zfitter_up", 
+        "zfitter_up", 
+        "zfitter_up"
+    ], 
+    "labels": [
+        "pospol_downquark", 
+        "negpol_downquark", 
+        "pospol_upquark", 
+        "negpol_upquark"
+    ], 
+    "nicks": [
+        "pospol_downquark", 
+        "pospol_downquark_madgraph", 
+        "negpol_downquark", 
+        "negpol_downquark_madgraph", 
+        "pospol_upquark", 
+        "pospol_upquark_madgraph", 
+        "negpol_upquark", 
+        "negpol_upquark_madgraph"
+    ], 
+    "nicks_instead_labels": true, 
+    "nicks_whitelist": [
+        "weight"
+    ], 
+    "output_dir": "TauPolSoftware/CalibrationCurve/data", 
+    "plot_modules": [
+        "ExportRoot"
+    ], 
+    "tree_draw_options": [
+        "prof"
+    ], 
+    "weights": [
+        "1", 
+        "abs(sin2theta-0.2224)<0.002", 
+        "1", 
+        "abs(sin2theta-0.2224)<0.002", 
+        "1", 
+        "abs(sin2theta-0.2224)<0.002", 
+        "1", 
+        "abs(sin2theta-0.2224)<0.002"
+    ], 
+    "x_bins": [
+        "1201,24.875,325.125"
+    ], 
+    "x_expressions": [
+        "energy"
+    ], 
+    "x_label": "gen_genbosonmass", 
+    "y_bins": [
+        "101,0.09875,0.35125", 
+        "1,0.09875,0.35125", 
+        "101,0.09875,0.35125", 
+        "1,0.09875,0.35125", 
+        "101,0.09875,0.35125", 
+        "1,0.09875,0.35125", 
+        "101,0.09875,0.35125", 
+        "1,0.09875,0.35125"
+    ], 
+    "y_expressions": [
+        "sin2theta"
+    ], 
+    "y_label": "sin^{2} #theta_{W}", 
+    "z_expressions": [
+        "xsec*(1+pol)/2", 
+        "xsec*(1+pol)/2", 
+        "xsec*(1-pol)/2", 
+        "xsec*(1-pol)/2", 
+        "xsec*(1+pol)/2", 
+        "xsec*(1+pol)/2", 
+        "xsec*(1-pol)/2", 
+        "xsec*(1-pol)/2"
+    ], 
+    "z_label": "Weight"
+}
