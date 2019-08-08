@@ -20,9 +20,9 @@ if __name__ == "__main__":
 	parser.add_argument("--sin2theta-delta", type=float, default=0.0025,
 	                    help="Sin^2 theta_W step size for scan. [Default: %(default)s]")
 	
-	parser.add_argument("--energy-min", type=float, default=35.0,
+	parser.add_argument("--energy-min", type=float, default=25.0,
 	                    help="Min. sqrt(s) value for scan. [Default: %(default)s]")
-	parser.add_argument("--energy-max", type=float, default=350.0,
+	parser.add_argument("--energy-max", type=float, default=325.0,
 	                    help="Max. sqrt(s) value for scan. [Default: %(default)s]")
 	parser.add_argument("--energy-delta", type=float, default=0.25,
 	                    help="Sqrt(s) step size for scan. [Default: %(default)s]")
